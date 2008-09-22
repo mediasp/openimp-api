@@ -16,13 +16,25 @@ module CI
     attr_accessor :username, :password
    
     def ci_property_to_method_name(property)
+      property = property.to_s
       case property
-      when /\_\_[A-Z]+\_\_/
+      when /^\_\_/
         property.downcase
       else
         property.underscore
       end
     end
+     
+    def method_name_to_ci_property(method_name)
+      method_name = method_name.to_s
+      case method_name
+      when /^\_\_/
+        property.upcase
+      else
+        property.camelize
+      end
+    end
+
   end
 end
 
