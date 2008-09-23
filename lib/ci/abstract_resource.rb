@@ -7,6 +7,8 @@ class CI::AbstractResource
   # ci_properties :Foo, :BarBaz, :Etc
   # findable_by :Foo, [:BarBaz, :Gubbins], :Etc #maps to find_by_foo, find_by_bar_and_baz, find_by_etc
   # allowed_methods :put, :post, :get, :etc #enables finders and save methods accordingly.
+  # Maybe CI itself could be the superclass?
+  
   
   def self.ci_properties(*properties)
     properties = [properties] unless properties.is_a?(Array)
@@ -43,6 +45,7 @@ class CI::AbstractResource
   end
   
   def save
+    #remove __ properties here - they never need be sent back to the server.
     CI.save(self) if self.class.allowed_methods.include?(:post)
   end
   
