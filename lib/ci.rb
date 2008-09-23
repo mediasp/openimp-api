@@ -5,13 +5,18 @@ require 'rubygems'
 require 'json'
 require 'uri'
 require 'net/http'
-require 'rexml/document'
-require 'activesupport'
+require 'net/https'
+require 'active_support/core_ext/string/inflections'
+require 'active_support/core_ext/class'
 
 class CI
+  PRTOCOL = Net::HTTPS
   HOST = 'mfs.ci-support.com'
-  BASE_PATH = '/v1/'
+  BASE_PATH = '/v1'
 
+  class_inheritable_array :allowed_requests
+  class_inheritable_accessor :uri_path
+  
   class << self
     attr_accessor :username, :password
    
@@ -48,47 +53,41 @@ class CI
       end
     end
     
-    def find(prms)
-      params = CI.find(self, prms) if self.class.allowed_methods.include?(:get) #
-      return self.new(params) if params
+    def do_request(http_method, path_pattern=[], post_params=[], post_data=nil, &callback)
+      raise "CI.username not set" unless CI.username
+      raise "CI.password not set" unless CI.password
+      multipart = post_data && !post_params.empty?
+      post_params = @params.select {|k,v| post_params.include?[k]}
+      path = path_pattern.shift
+      while path =~ /\?/ && !path_pattern.empty?
+        path.sub!('?', path_pattern.shift.to_s)
+      end
+      path = "#{BASE_PATH}#{resource_class.uri_path}#{path}"
+      PROTOCOL.start(url) do |session|
+        session.send(http_method)
+        #this is what needs fleshing out now.
+      end
+      response = JSON.parse(response)
+      return callback ? callback.call(response) : self.new(response)
     end
-
-    def create(prms)
-      instance = self.new(prms)
-      instance.save
-      return instance
-    end
-
-    def uri_path
-      ''
-    end
-
+     
   end
   
   
   def initialize(params={})
     @params = HashWithIndifferentAccess.merge(params)
   end
- 
-  def save
-    #remove __ properties here - they never need be sent back to the server.
-    CI.save(self) if self.class.allowed_methods.include?(:post)
-  end
-  
-    
-  
-  
+   
 end
 
 
 #:load the useful stuff here:
 def load_files(dir)
   Dir.new(dir).each do |f|
-    case f
-    when /\.rb$/
-      require "dir/f"
-    when /\/$/
-      load_files(dir + f)
+    if f =~ /\.rb$/
+      require "#{dir}/#{f}"
+      folder = "#{dir}/#{f.sub(/\.rb$/, '/')}"
+      load_files(folder) if File.exists?(folder) 
     end
   end
 end
