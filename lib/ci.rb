@@ -9,6 +9,7 @@ require 'net/https'
 require 'active_support/core_ext/string/inflections'
 require 'active_support/core_ext/class'
 require 'active_support/core_ext/hash/indifferent_access'
+require 'enumerable_extensions'
 
 class CI
   PROTOCOL = Net::HTTPS
@@ -53,7 +54,13 @@ class CI
       end
     end
     
-    def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, &callback)
+    
+    def parse_json_response(respone)
+      response = JSON.parse(response)
+      response.map_to_hash {|k,v|  ci_property_to_method_name(k), v}
+    end
+    
+    def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, calling_instance=nil, &callback)
       raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
       raise "CI.username not set" unless CI.username
       raise "CI.password not set" unless CI.password
@@ -61,7 +68,7 @@ class CI
       headers = (headers || {}).merge('Accept' => 'application/json')
       response = PROTOCOL.start(HOST) do |session|
         session.basic_auth(username, password)
-        return case http_method
+        response = case http_method
         when :get
           session.get(path, headers)
         when :head
@@ -72,14 +79,23 @@ class CI
           headers.merge!('application/x-www-form-urlencoded')
           session.post(path, post_data, headers)
         when :put
-          raise "You must supply a Content-Type to perform a PUT request" unless headers['Content-Type']
+          raise "You must supply a Content-type to perform a PUT request" unless headers['Content-type']
+          headers.merge!('Content-length' => put_data.length)
           session.put(path, put_data, headers)
         when :delete
           session.delete(path, headers)
         end
       end
-      response = response ? JSON.parse(response) : raise "No response recieved!"
-      return callback ? callback.call(response) : self.new(response)
+      raise "No response recieved!" if !response
+      #TODO: deal with exceptional responses.
+      return if callback
+        callback.call(response)
+      elsif calling_instance
+        calling_instance.params=parse_json_response(response.body)
+        true
+      else
+        self.new(parse_json_response(response.body))
+      end
     end
   end
   
@@ -87,6 +103,10 @@ class CI
   def initialize(params={})
     raise "class CI is abstract" if self.class == CI
     @params = HashWithIndifferentAccess.merge(params)
+  end
+  
+  def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, &callback)
+    self.class.do_request(http_method, path, headers, put_data, restrict_post_params_to, self, &callback)
   end
    
 end
