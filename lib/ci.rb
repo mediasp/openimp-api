@@ -8,13 +8,13 @@ require 'net/http'
 require 'net/https'
 require 'active_support/core_ext/string/inflections'
 require 'active_support/core_ext/class'
+require 'active_support/core_ext/hash/indifferent_access'
 
 class CI
-  PRTOCOL = Net::HTTPS
+  PROTOCOL = Net::HTTPS
   HOST = 'mfs.ci-support.com'
   BASE_PATH = '/v1'
 
-  class_inheritable_array :allowed_requests
   class_inheritable_accessor :uri_path
   
   class << self
@@ -39,7 +39,7 @@ class CI
         property.camelize
       end
     end
-    
+        
     def ci_properties(*properties)
       properties = [properties] unless properties.is_a?(Array)
       properties.each do |property|
@@ -53,28 +53,39 @@ class CI
       end
     end
     
-    def do_request(http_method, path_pattern=[], post_params=[], post_data=nil, &callback)
+    def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, &callback)
+      raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
       raise "CI.username not set" unless CI.username
       raise "CI.password not set" unless CI.password
-      multipart = post_data && !post_params.empty?
-      post_params = @params.select {|k,v| post_params.include?[k]}
-      path = path_pattern.shift
-      while path =~ /\?/ && !path_pattern.empty?
-        path.sub!('?', path_pattern.shift.to_s)
-      end
       path = "#{BASE_PATH}#{resource_class.uri_path}#{path}"
-      PROTOCOL.start(url) do |session|
-        session.send(http_method)
-        #this is what needs fleshing out now.
+      headers = (headers || {}).merge('Accept' => 'application/json')
+      response = PROTOCOL.start(HOST) do |session|
+        session.basic_auth(username, password)
+        return case http_method
+        when :get
+          session.get(path, headers)
+        when :head
+          session.head(path, headers)
+        when :post
+          post_params = restrict_post_params_to ? @params.select {|k,v| restrict_post_params_to.include?[k]} : @params
+          post_data = post_params.map {|k,v| "#{method_name_to_ci_property(k)}=#{v}"}.join('&')
+          headers.merge!('application/x-www-form-urlencoded')
+          session.post(path, post_data, headers)
+        when :put
+          raise "You must supply a Content-Type to perform a PUT request" unless headers['Content-Type']
+          session.put(path, put_data, headers)
+        when :delete
+          session.delete(path, headers)
+        end
       end
-      response = JSON.parse(response)
+      response = response ? JSON.parse(response) : raise "No response recieved!"
       return callback ? callback.call(response) : self.new(response)
     end
-     
   end
   
   
   def initialize(params={})
+    raise "class CI is abstract" if self.class == CI
     @params = HashWithIndifferentAccess.merge(params)
   end
    
