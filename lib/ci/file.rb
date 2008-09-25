@@ -11,7 +11,7 @@ class CI::File < CI
   end
   
   def self.new_from_file(filename, mime_type=nil)
-    #TODO sort out reading from file and despatch to new_from_data
+    self.new({}, File.read(filename), mime_type)
   end
   
   def data
@@ -55,9 +55,16 @@ class CI::File < CI
   
   #TODO sort out saving updated MIME TYPE without resending data. Perhaps use a HEAD request?
   
-  def cast_as()
+  def cast_as(klass)
     raise "You cannot re-cast a subclass of CI::FILE" unless self.class == CI::File
-    #TODO finish cast_as method.
+    case klass
+    when CI::File::Image
+      raise "This is not an image file of a compatible type" unless mime_major == 'image' && ['jpeg', 'gif', 'png', 'tiff'].include?(mime_minor)
+    when CI::File::Audio
+      raise "This is not an audio file of a compatible type" unless mime_major == 'audio' && []
+    end
+    @params.merge(:new_type => 'klass.name'.sub('CI', 'API'))
+    klass.do_request(:post, "#{id}/becomesubtype")
   end
   
 end

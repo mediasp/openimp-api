@@ -6,13 +6,12 @@ require 'json'
 require 'uri'
 require 'net/http'
 require 'net/https'
-require 'active_support/core_ext/string/inflections'
-require 'active_support/core_ext/class'
-require 'active_support/core_ext/hash/indifferent_access'
+require 'rexml/document'
+require 'activesupport'
 require 'enumerable_extensions'
 
 class CI
-  PROTOCOL = Net::HTTPS
+  PROTOCOL = 'https'
   HOST = 'mfs.ci-support.com'
   BASE_PATH = '/v1'
 
@@ -57,7 +56,7 @@ class CI
     
     def parse_json_response(respone)
       response = JSON.parse(response)
-      response.map_to_hash {|k,v|  ci_property_to_method_name(k), v}
+      response.map_to_hash {|k,v|  [ci_property_to_method_name(k), v]}
     end
     
     def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, calling_instance=nil, &callback)
@@ -66,7 +65,7 @@ class CI
       raise "CI.password not set" unless CI.password
       path = "#{BASE_PATH}#{resource_class.uri_path}#{path}"
       headers = (headers || {}).merge('Accept' => 'application/json')
-      response = PROTOCOL.start(HOST) do |session|
+      response = Net::HTTP.start("#{PROTOCOL}://#{HOST}") do |session|
         session.basic_auth(username, password)
         response = case http_method
         when :get
@@ -88,7 +87,7 @@ class CI
       end
       raise "No response recieved!" if !response
       #TODO: deal with exceptional responses.
-      return if callback
+      result =  if callback
         callback.call(response)
       elsif calling_instance
         calling_instance.params=parse_json_response(response.body)
@@ -96,6 +95,7 @@ class CI
       else
         self.new(parse_json_response(response.body))
       end
+      return result
     end
   end
   
