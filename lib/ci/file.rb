@@ -1,17 +1,15 @@
 class CI::File < CI
-  ci_properties :Id, :MimeMajor, :MimeMinor, :SHA1DigestBase64, :FileSize, :__REPRESENTATION__
+  ci_properties :Id, :MimeMajor, :MimeMinor, [:SHA1DigestBase64, :sha1_digest_base64], :FileSize, :__REPRESENTATION__
   
   self.uri_path = '/filestore'
   attr_writer :data
-  alias_method :sha1_digest_base64, :s_h_a1_digest_base64 #ActiveSupport's String#underlinize gets confused.  We'll add  a convenience method for humans.
-  alias_method :sha1_digest_base64=, :s_h_a1_digest_base64= 
-  
+
   def self.new_from_data(data, mime_type=nil)
     self.new({}, data, mime_type)
   end
   
   def self.new_from_file(filename, mime_type=nil)
-    self.new({}, File.read(filename), mime_type)
+    self.new({}, ::File.read(filename), mime_type)
   end
   
   def data
@@ -39,7 +37,7 @@ class CI::File < CI
   end
   
   def store
-    do_request(:put, '/', {'Content-Type' => mime_type}, data)
+    do_request(:put, '/', {'Content-type' => mime_type}, data)
   end
   
   def retrieve

@@ -11,19 +11,22 @@ require 'activesupport'
 require 'enumerable_extensions'
 
 class CI
-  PROTOCOL = 'https'
+  PROTOCOL = :https
+  PORT = 443
   HOST = 'mfs.ci-support.com'
   BASE_PATH = '/v1'
 
   class_inheritable_accessor :uri_path
+  class_inheritable_accessor :exceptional_property_name_mappings
   
   class << self
     attr_accessor :username, :password
    
     def ci_property_to_method_name(property)
       property = property.to_s
-      case property
-      when /^\_\_/
+      if method_name = exceptional_property_name_mappings && exceptional_property_name_mappings[property]
+        method_name.to_s
+      elsif property =~ /^\_\_/
         property.downcase
       else
         property.underscore
@@ -32,23 +35,30 @@ class CI
      
     def method_name_to_ci_property(method_name)
       method_name = method_name.to_s
-      case method_name
-      when /^\_\_/
-        property.upcase
+      if property_name = exceptional_property_name_mappings && exceptional_property_name_mappings.find{|k,v| v == method_name }
+        property_name.to_s
+      elsif method_name =~ /^\_\_/
+        method_name.upcase
       else
-        property.camelize
+        method_name.camelize
       end
     end
         
     def ci_properties(*properties)
+      exceptional_property_name_mappings ||= HashWithIndifferentAccess.new
       properties = [properties] unless properties.is_a?(Array)
       properties.each do |property|
-        method = CI.ci_property_to_method_name(property)
-        self.define_method(method, lambda {
-            self.params[method]
+        if property.is_a?(Array)
+          exceptional_property_name_mappings.merge!({property[0] => property[1]})
+          method = property[1].to_s
+        else
+          method = CI.ci_property_to_method_name(property)
+        end
+        define_method(method, lambda {
+            @params[method]
         })
-        self.define_method(method + '=', lambda{ |value|
-          self.params[method] = value
+        define_method(method + '=', lambda{ |value|
+          @params[method] = value
         }) unless method =~ /^\_\_/
       end
     end
@@ -63,10 +73,14 @@ class CI
       raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
       raise "CI.username not set" unless CI.username
       raise "CI.password not set" unless CI.password
-      path = "#{BASE_PATH}#{resource_class.uri_path}#{path}"
+      path = "#{BASE_PATH}#{(calling_instance ? calling_instance.class : self).uri_path}#{path}"
       headers = (headers || {}).merge('Accept' => 'application/json')
-      response = Net::HTTP.start("#{PROTOCOL}://#{HOST}") do |session|
-        session.basic_auth(username, password)
+      connection = Net::HTTP.new(HOST, PORT)
+      if PROTOCOL == :https
+        connection.use_ssl
+        connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
+      response = connection.start do |session|
         response = case http_method
         when :get
           session.get(path, headers)
@@ -86,6 +100,7 @@ class CI
         end
       end
       raise "No response recieved!" if !response
+      response.basic_auth(username, password)
       #TODO: deal with exceptional responses.
       result =  if callback
         callback.call(response)
@@ -102,7 +117,7 @@ class CI
   
   def initialize(params={})
     raise "class CI is abstract" if self.class == CI
-    @params = HashWithIndifferentAccess.merge(params)
+    @params = HashWithIndifferentAccess.new.merge(params)
   end
   
   def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, &callback)
