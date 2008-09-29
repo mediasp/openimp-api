@@ -11,9 +11,9 @@ require 'activesupport'
 require 'enumerable_extensions'
 
 class CI
-  PROTOCOL = :https
-  PORT = 443
-  HOST = 'mfs.ci-support.com'
+  PROTOCOL = :http
+  PORT = 80 
+  HOST = 'api.stage'
   BASE_PATH = '/v1'
 
   class_inheritable_accessor :uri_path
@@ -64,7 +64,7 @@ class CI
     end
     
     
-    def parse_json_response(respone)
+    def parse_json_response(response)
       response = JSON.parse(response)
       response.map_to_hash {|k,v|  [ci_property_to_method_name(k), v]}
     end
@@ -101,16 +101,14 @@ class CI
       when :delete
         Net::HTTP::Delete.new(path, headers)
       end
-      req.basic_auth(username, password)
+      req.basic_auth(CI.username, CI.password)
       response = connection.request(req)
       raise "No response recieved!" if !response
-      require 'pp'
-      pp response
       #TODO: deal with exceptional responses.
-      result =  if callback
+      result = if callback
         callback.call(response)
       elsif calling_instance
-        calling_instance.params=parse_json_response(response.body)
+        calling_instance.params=calling_instance.params.merge(parse_json_response(response.body))
         true
       else
         self.new(parse_json_response(response.body))
@@ -119,6 +117,7 @@ class CI
     end
   end
   
+  attr_accessor :params
   
   def initialize(params={})
     raise "class CI is abstract" if self.class == CI
