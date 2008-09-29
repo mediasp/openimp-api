@@ -44,7 +44,7 @@ class CI::File < CI
   
   def store
     if @data_changed
-      do_request(:put, "/#{id}", {'Content-type' => mime_type}, data) #when id is nil the path will just be '/' which creates a new record. Clever, huh?
+      do_request(:put, "/", {'Content-type' => mime_type}, data)
       @data_changed = false
     end
   end
