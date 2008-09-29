@@ -77,30 +77,35 @@ class CI
       headers = (headers || {}).merge('Accept' => 'application/json')
       connection = Net::HTTP.new(HOST, PORT)
       if PROTOCOL == :https
-        connection.use_ssl
+        connection.use_ssl = true
         connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
-      response = connection.start do |session|
-        response = case http_method
-        when :get
-          session.get(path, headers)
-        when :head
-          session.head(path, headers)
-        when :post
-          post_params = restrict_post_params_to ? @params.select {|k,v| restrict_post_params_to.include?[k]} : @params
-          post_data = post_params.map {|k,v| "#{method_name_to_ci_property(k)}=#{v}"}.join('&')
-          headers.merge!('application/x-www-form-urlencoded')
-          session.post(path, post_data, headers)
-        when :put
-          raise "You must supply a Content-type to perform a PUT request" unless headers['Content-type']
-          headers.merge!('Content-length' => put_data.length)
-          session.put(path, put_data, headers)
-        when :delete
-          session.delete(path, headers)
-        end
+      req = case http_method
+      when :get
+        Net::HTTP::Get.new(path, headers)
+      when :head
+       Net::HTTP::Head.new(path, headers)
+      when :post
+        post_params = restrict_post_params_to ? @params.select {|k,v| restrict_post_params_to.include?[k]} : @params
+        post_data = post_params.map {|k,v| "#{method_name_to_ci_property(k)}=#{v}"}.join('&')
+        headers.merge!('application/x-www-form-urlencoded')
+        r = Net::HTTP::Post.new(path, headers)
+        r.body = post_data
+        r
+      when :put
+        raise "You must supply a Content-type to perform a PUT request" unless headers['Content-type']
+        headers.merge!('Content-length' => put_data.length.to_s)
+        r = Net::HTTP::Put.new(path, headers)
+        r.body = put_data
+        r
+      when :delete
+        Net::HTTP::Delete.new(path, headers)
       end
+      req.basic_auth(username, password)
+      response = connection.request(req)
       raise "No response recieved!" if !response
-      response.basic_auth(username, password)
+      require 'pp'
+      pp response
       #TODO: deal with exceptional responses.
       result =  if callback
         callback.call(response)
