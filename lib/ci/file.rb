@@ -38,8 +38,7 @@ class CI::File < CI
   end
   
   def mime_type=(mime)
-    mime = mime.split('/')
-    mime_major, mime_minor = *mime
+    self.mime_major, self.mime_minor = *mime.split('/')
   end
   
   def store
@@ -58,17 +57,26 @@ class CI::File < CI
     end
     return @data
   end
+  
+  def create_token(unlimited=false, attempted_downloads=2, successful_downloads=2)
+    self.store
+    post_data = unlimited ? {:unlimited => '1'} : {:max_download_attempts => attempted_downloads, :max_download_successes => successful_downloads}
+    CI::FileToken.do_request(:post, "/#{id}/createfiletoken", nil, nil, post_data)
+  end
     
   def cast_as(klass)
+    self.store
+    puts "mime_major: #{mime_major}"
+    puts "mime_minor: #{mime_minor}"
     raise "You cannot re-cast a subclass of CI::FILE" unless self.class == CI::File
-    case klass
-    when CI::File::Image
+    if klass == CI::File::Image
       raise "This is not an image file of a compatible type" unless mime_major == 'image' && ['jpeg', 'gif', 'png', 'tiff'].include?(mime_minor)
-    when CI::File::Audio
-      raise "This is not an audio file of a compatible type" unless mime_major == 'audio' && []
+    elsif klass == CI::File::Audio
+      raise "This is not an audio file of a compatible type" unless mime_major == 'audio' && [] #finish this
+    else
+      raise "You can't cast an instance of CI::File to an instance of #{klass.name}"
     end
-    @params.merge(:new_type => 'klass.name'.sub('CI', 'API'))
-    klass.do_request(:post, "#{id}/becomesubtype")
+    klass.do_request(:post, "/#{id}/becomesubtype", nil, nil, {:new_type => klass.name.sub('CI', 'API')})
   end
   
 end
