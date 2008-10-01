@@ -1,5 +1,5 @@
 class CI::File < CI
-  ci_properties :Id, :MimeMajor, :MimeMinor, [:SHA1DigestBase64, :sha1_digest_base64], :FileSize, :__REPRESENTATION__
+  ci_properties :Id, :MimeMajor, :MimeMinor, [:SHA1DigestBase64, :sha1_digest_base64], :FileSize, :Stored
   
   self.uri_path = '/filestore'
 
@@ -10,15 +10,15 @@ class CI::File < CI
   def self.new_from_file(filename, mime_type=nil)
     self.new({}, ::File.read(filename), mime_type)
   end
-    
-  def self.find(id)
-    do_request(:get, "/#{id}")
-  end  
-    
+        
   def initialize(params={}, data=nil, mime_type=nil)
     super(params)
     self.data=data
     self.mime_type=mime_type if mime_type
+  end
+  
+  def stored?
+    stored ? true : false
   end
   
   def mime_type
@@ -58,12 +58,7 @@ class CI::File < CI
     end
     return @data
   end
-  
-  def delete
-    do_request(:delete, "/#{id}")
-    self.data = nil
-  end
-  
+    
   def cast_as(klass)
     raise "You cannot re-cast a subclass of CI::FILE" unless self.class == CI::File
     case klass
