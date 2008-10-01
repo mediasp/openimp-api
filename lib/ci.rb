@@ -122,7 +122,7 @@ class CI
   end
   
   attr_accessor :params
-  ci_properties :__REPRESENTATION__, :__CLASS__
+  ci_properties :__REPRESENTATION__, :__CLASS__, [:errormessage, :errormessage]
   
   def initialize(params={})
     raise "class CI is abstract" if self.class == CI
@@ -130,8 +130,12 @@ class CI
     params.each { |method_name, value| self.send("#{method_name}=".to_sym, value)} #so overridden accessors wil work
   end
   
-  def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, &callback)
-    self.class.do_request(http_method, path, headers, put_data, restrict_post_params_to, self, &callback)
+  def errormessage=(string)
+    raise "Error from CI API - #{__class__}: #{string}"
+  end
+  
+  def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, &callback)
+    self.class.do_request(http_method, path, headers, put_data, post_params, self, &callback)
   end
   
   def delete
