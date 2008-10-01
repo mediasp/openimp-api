@@ -22,6 +22,10 @@ class CI
   class << self
     attr_accessor :username, :password
    
+    def find(id)
+      do_request(:get, "/#{id}")
+    end
+   
     def ci_property_to_method_name(property)
       property = property.to_s
       if method_name = exceptional_property_name_mappings && exceptional_property_name_mappings[property]
@@ -59,7 +63,7 @@ class CI
         })
         define_method(method + '=', lambda{ |value|
           @params[method] = value
-        }) unless method =~ /^\_\_/
+        })
       end
     end
     
@@ -69,7 +73,7 @@ class CI
       response.map_to_hash {|k,v|  [ci_property_to_method_name(k), v]}
     end
     
-    def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, calling_instance=nil, &callback)
+    def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, calling_instance=nil, &callback)
       raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
       raise "CI.username not set" unless CI.username
       raise "CI.password not set" unless CI.password
@@ -86,9 +90,9 @@ class CI
       when :head
        Net::HTTP::Head.new(path, headers)
       when :post
-        post_params = restrict_post_params_to ? @params.select {|k,v| restrict_post_params_to.include?[k]} : @params
+        post_params = (@params || {}) if !post_params
         post_data = post_params.map {|k,v| "#{method_name_to_ci_property(k)}=#{v}"}.join('&')
-        headers.merge!('application/x-www-form-urlencoded')
+        headers.merge!('Content-Type' => 'application/x-www-form-urlencoded')
         r = Net::HTTP::Post.new(path, headers)
         r.body = post_data
         r
@@ -118,14 +122,21 @@ class CI
   end
   
   attr_accessor :params
+  ci_properties :__REPRESENTATION__, :__CLASS__
   
   def initialize(params={})
     raise "class CI is abstract" if self.class == CI
-    @params = HashWithIndifferentAccess.new.merge(params)
+    @params = HashWithIndifferentAccess.new
+    params.each { |method_name, value| self.send("#{method_name}=".to_sym, value)} #so overridden accessors wil work
   end
   
   def do_request(http_method, path, headers=nil, put_data=nil, restrict_post_params_to=nil, &callback)
     self.class.do_request(http_method, path, headers, put_data, restrict_post_params_to, self, &callback)
+  end
+  
+  def delete
+    do_request(:delete, "/#{id}")
+    self.data = nil
   end
    
 end
