@@ -60,15 +60,13 @@ class CI::File < CI
   
   def create_token(unlimited=false, attempted_downloads=2, successful_downloads=2)
     self.store
-    post_data = unlimited ? {:unlimited => '1'} : {:max_download_attempts => attempted_downloads, :max_download_successes => successful_downloads}
+    post_data = unlimited ? {:Unlimited => '1'} : {:MaxDownloadAttempts => attempted_downloads, :MaxDownloadSuccesses => successful_downloads}
     CI::FileToken.do_request(:post, "/#{id}/createfiletoken", nil, nil, post_data)
   end
     
   def cast_as(klass)
     self.store
-    puts "mime_major: #{mime_major}"
-    puts "mime_minor: #{mime_minor}"
-    raise "You cannot re-cast a subclass of CI::FILE" unless self.class == CI::File
+    raise "You cannot re-cast a subclass of CI::FILE" unless self.class == CI::File || self.class == klass #cast_as(self.class) is used when initializing File subclasses in order to inform the server and get additional params.
     if klass == CI::File::Image
       raise "This is not an image file of a compatible type" unless mime_major == 'image' && ['jpeg', 'gif', 'png', 'tiff'].include?(mime_minor)
     elsif klass == CI::File::Audio
@@ -76,7 +74,7 @@ class CI::File < CI
     else
       raise "You can't cast an instance of CI::File to an instance of #{klass.name}"
     end
-    klass.do_request(:post, "/#{id}/becomesubtype", nil, nil, {:new_type => klass.name.sub('CI', 'API')})
+    klass.do_request(:post, "/#{id}/becomesubtype", nil, nil, {:NewType => klass.name.sub('CI', 'API')})
   end
   
 end

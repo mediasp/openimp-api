@@ -90,8 +90,8 @@ class CI
       when :head
        Net::HTTP::Head.new(path, headers)
       when :post
-        post_params = (@params || {}) if !post_params
-        post_data = post_params.map {|k,v| "#{method_name_to_ci_property(k)}=#{v}"}.join('&')
+        post_params = (@params.map_to_hash {|k,v| [method_name_to_ci_property(k), v]} || {}) if !post_params
+        post_data = post_params.map {|k,v| "#{k}=#{v}"}.join('&')
         headers.merge!('Content-Type' => 'application/x-www-form-urlencoded')
         r = Net::HTTP::Post.new(path, headers)
         r.body = post_data
