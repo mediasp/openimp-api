@@ -21,7 +21,7 @@ class CI::File::Image < CI::File
     cast_as(self.class) unless __class__ == 'API::File::Image' #Looks tautological, but we need to let the server know that this is an Image.
   end
   
-  def resize(target_width=nil, target_height=nil, method=nil, target_type=nil, synchronous=true)
+  def resize(target_width=nil, target_height=nil, method=nil, target_type=nil, token_properties=nil, synchronous=true)
     self.store
     method ||= 'NOMODIFIER'
     target_width ||= width
@@ -33,6 +33,11 @@ class CI::File::Image < CI::File
     method = "IMAGE_RESIZE_#{method}"
     params = {:targetY => target_height, :targetX =>target_width, :targetType => target_type, :resizeType => method}
     params.merge!(:Synchronous => 'on') if synchronous
-    CI::File::Image.do_request(:post, "/#{id}/contextualmethod/Resize", nil, nil, params)
+    if token_properties
+      params.merge!(token_properties)
+      CI::FileToken.do_request(:post, "/#{id}/contextualmethod/Resize/createfiletoken", nil, nil, params)
+    else
+      CI::File::Image.do_request(:post, "/#{id}/contextualmethod/Resize", nil, nil, params)
+    end
   end
 end

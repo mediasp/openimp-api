@@ -23,7 +23,11 @@ class CI
     attr_accessor :username, :password
    
     def find(id)
-      do_request(:get, "/#{id}")
+      do_request(:get, "/#{id}") do |response|
+        json = parse_json_response(response.body)
+        klass = json['__class__'].sub('API', 'CI').constantize
+        klass.new(json)
+      end
     end
    
     def ci_property_to_method_name(property)
