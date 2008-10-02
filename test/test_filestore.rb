@@ -5,8 +5,16 @@ TEST_IMAGE_FILE = "#{File.dirname(__FILE__)}/test_assets/test_image.jpg"
 
 class TestFilestore < Test::Unit::TestCase
   def setup
-    CI.username = 'example@ci-support.com'
-    CI.password = 'example'
+    unless CI.username
+      print "\nUsername: "
+      CI.username = gets.chomp
+    end
+    unless CI.password
+      print "\nPassword: "
+      CI.password = gets.chomp
+      print "\n"
+    end
+    
     c = CI::File.new_from_file(TEST_ASSET_FILE, 'text/plain')
     c.store
     @uploaded_id = c.id
