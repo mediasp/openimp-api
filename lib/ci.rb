@@ -24,7 +24,7 @@ class CI
    
     def find(id)
       do_request(:get, "/#{id}") do |response|
-        json = parse_json_response(response.body)
+        json = methodize_hash(JSON.parse(response.body))
         klass = json['__class__'].sub('API', 'CI').constantize
         klass.new(json)
       end
@@ -72,9 +72,15 @@ class CI
     end
     
     
-    def parse_json_response(response)
-      response = JSON.parse(response)
-      response.map_to_hash {|k,v|  [ci_property_to_method_name(k), v]}
+    def methodize_hash(hash)
+      hash.map_to_hash do |k,v|
+        if v.is_a?(Hash)
+          klass = v['__CLASS__'] ? v['__CLASS__'].sub('API', 'CI').constantize : self
+          [self.ci_property_to_method_name(k), klass.methodize_hash(v)]
+        else
+          [self.ci_property_to_method_name(k), v]
+        end
+      end
     end
     
     def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, calling_instance=nil, &callback)
@@ -116,10 +122,10 @@ class CI
       result = if callback
         callback.call(response)
       elsif calling_instance
-        calling_instance.params=calling_instance.params.merge(parse_json_response(response.body))
+        calling_instance.params=calling_instance.params.merge(methodize_hash(JSON.parse(response.body)))
         true
       else
-        self.new(parse_json_response(response.body))
+        self.new(methodize_hash(JSON.parse(response.body)))
       end
       return result
     end

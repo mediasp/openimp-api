@@ -6,11 +6,8 @@ class CI::FileToken < CI
   end
   
   def file=(file_hash)
-    @params[:file_id]= file_hash['Id'].to_i
-  end
-  
-  def file
-    @params[:file] ||= File.find(@params[:file_id])
+    klass = file_hash['__class__'].sub('API', 'CI').constantize
+    @params['file'] = klass.new(file_hash)
   end
   
 end
