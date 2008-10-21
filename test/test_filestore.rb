@@ -5,6 +5,7 @@ TEST_IMAGE_FILE = "#{File.dirname(__FILE__)}/test_assets/test_image.jpg"
 
 class TestFilestore < Test::Unit::TestCase
   def setup
+
     unless CI.username
       print "\nUsername: "
       CI.username = gets.chomp
@@ -83,7 +84,7 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal height, resized.height
     assert_equal width, resized.width
   end
-  
+
   def test_image_resize_with_token
     test_image = CI::File::Image.new_from_file(TEST_IMAGE_FILE, 'image/jpeg')
     assert_instance_of CI::File::Image, test_image

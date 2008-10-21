@@ -21,6 +21,7 @@ class CI::File::Image < CI::File
     cast_as(self.class) unless __class__ == 'API::File::Image' #Looks tautological, but we need to let the server know that this is an Image.
   end
   
+
   def resize(target_width=nil, target_height=nil, method=nil, target_type=nil, token_properties=nil, synchronous=true)
     self.store
     method ||= 'NOMODIFIER'
