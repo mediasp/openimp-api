@@ -11,10 +11,12 @@ require 'activesupport'
 require 'enumerable_extensions'
 
 #This class holds configuration information for the entire app as class instance variables, and subclasses inherit common functionality from it. It is abstract and therefore cannot be instantiated.
-#Your username and password for the CI api should be set with.
-#CI.username='username'
-#CI.password='password'
+#
+#Your username and password for the CI api should be set with:
+#* CI.username='username'
+#* CI.password='password'
 #Each subclass instance has a .__representation__, .__class__ and errormessage property, corresponding to the __REPRESENTATION__, __CLASS__ and errormessage properties of the API.
+#
 #More details about all the properties of each Class of object are available at https://mfs.ci-support.com/v1/docs
 
 class CI

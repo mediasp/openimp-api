@@ -1,5 +1,6 @@
-# CI File subclass for image files.
-# Has additional properties as well as those inherited from CI::File:
+#CI File subclass for image files.
+#
+#Has additional properties as well as those inherited from CI::File:
 #* width
 #* height
 class CI::File::Image < CI::File

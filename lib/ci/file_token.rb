@@ -1,5 +1,6 @@
-#Represents a File Token which can be given to an anonymous end user, allowing them to download a specific file
-#FileTokens have the following additional properties, as described in the CI API docs.
+#Represents a File Token which can be given to an anonymous end user, allowing them to download a specific file.
+#
+#FileTokens have the following additional properties, as described in the CI API docs:
 #* id
 #* url
 #* play_url
@@ -10,6 +11,7 @@
 #* max_download_attepts
 #* max_download_successes
 #* valid
+#
 #You shouldn't really have any need to initialize this class directly or alter it, and changed cannot be persisted back to the CI backend as a result.
 #It can be created by calling create_token or an associated method on an instance of CI::File or one of its subclasses.
 

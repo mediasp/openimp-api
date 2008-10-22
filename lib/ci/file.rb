@@ -5,6 +5,7 @@
 #* sha1_digest_base64
 #* file_size
 #* stored
+#
 #Documentation for all these properties can be found in CI's API documentation.
 
 class CI::File < CI
