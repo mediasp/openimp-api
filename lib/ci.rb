@@ -10,8 +10,8 @@ require 'rexml/document'
 require 'activesupport'
 require 'enumerable_extensions'
 
-# This class holds configuration information for the entire app as class instance variables, and subclasses inherit common functionality from it. It is abstract and therefore cannot be instantiated.
-# Your username and password for the CI api should be set with.
+#This class holds configuration information for the entire app as class instance variables, and subclasses inherit common functionality from it. It is abstract and therefore cannot be instantiated.
+#Your username and password for the CI api should be set with.
 #CI.username='username'
 #CI.password='password'
 #Each subclass instance has a .__representation__, .__class__ and errormessage property, corresponding to the __REPRESENTATION__, __CLASS__ and errormessage properties of the API.
@@ -184,7 +184,7 @@ class CI
 end
 
 
-#:load the useful stuff here:
+#:nodoc:
 def load_files(dir)
   Dir.new(dir).each do |f|
     if f =~ /\.rb$/

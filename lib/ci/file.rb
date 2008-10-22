@@ -1,4 +1,4 @@
-#Represents an object in the CI MFS filestore. CI::Files have the following properties, in addition to those inherited from teh CI Base class:
+#Represents an object in the CI MFS filestore. CI::Files have the following properties, in addition to those inherited from the CI Base class:
 #* id
 #* mime_major
 #* mime_minor
@@ -11,7 +11,7 @@ class CI::File < CI
   ci_properties :Id, :MimeMajor, :MimeMinor, [:SHA1DigestBase64, :sha1_digest_base64], :FileSize, :Stored  
   self.uri_path = '/filestore'
 
-  # Create a new file object from a string of data bytes. The mime_type of the data should be passed as a string.
+  #Create a new file object from a string of data bytes. The mime_type of the data should be passed as a string.
   def self.new_from_data(data, mime_type=nil)
     self.new({}, data, mime_type)
   end
@@ -28,22 +28,22 @@ class CI::File < CI
     self.mime_type=mime_type if mime_type
   end
   
-  # Returns a boolean value reflecting whether this file object has been stored remotely. Note that this doesn't necessarily reflect whether the file held locally differs from the remote copy at all.
+  #Returns a boolean value reflecting whether this file object has been stored remotely. Note that this doesn't necessarily reflect whether the file held locally differs from the remote copy at all.
   def stored?
     stored ? true : false
   end
   
-  #returns the mime type of the file. Wraps the mime_major and mime_minor methods of the CI API
+  #Returns the mime type of the file. Wraps the mime_major and mime_minor methods of the CI API
   def mime_type
     "#{mime_major}/#{mime_minor}"
   end
   
-  #return the file data stored in the CI API. this is memoiszed after the first request
+  #Return the file data stored in the CI API. this is memoiszed after the first request
   def data
     @data ||= retrieve
   end
   
-  #set the data stored in this File object.
+  #Set the data stored in this File object.
   def data=(data)
     unless @data == data
       @data = data
@@ -83,7 +83,7 @@ class CI::File < CI
     CI::FileToken.do_request(:post, "/#{id}/createfiletoken", nil, nil, post_data)
   end
     
-  # Cast this File as a subclass of CI::File. Will raise an exception unless the file data is of a compatible mime_type. Returns an instance of the class we are casting to - this doesn't modify the current instance in place, as that would be plain silly.
+  #Cast this File as a subclass of CI::File. Will raise an exception unless the file data is of a compatible mime_type. Returns an instance of the class we are casting to - this doesn't modify the current instance in place, as that would be plain silly.
   def cast_as(klass)
     self.store
     raise "You cannot re-cast a subclass of CI::FILE" unless self.class == CI::File || self.class == klass #cast_as(self.class) is used when initializing File subclasses in order to inform the server and get additional params.
