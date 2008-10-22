@@ -10,6 +10,13 @@ require 'rexml/document'
 require 'activesupport'
 require 'enumerable_extensions'
 
+# This class holds configuration information for the entire app as class instance variables, and subclasses inherit common functionality from it. It is abstract and therefore cannot be instantiated.
+# Your username and password for the CI api should be set with.
+#CI.username='username'
+#CI.password='password'
+#Each subclass instance has a .__representation__, .__class__ and errormessage property, corresponding to the __REPRESENTATION__, __CLASS__ and errormessage properties of the API.
+#More details about all the properties of each Class of object are available at https://mfs.ci-support.com/v1/docs
+
 class CI
   PROTOCOL = :http
   PORT = 80 
@@ -20,8 +27,9 @@ class CI
   class_inheritable_accessor :exceptional_property_name_mappings
   
   class << self
-    attr_accessor :username, :password
-   
+
+    attr_accessor :username, :password   
+   #Find  a resource by its id. Will return an instance of the appropriate subclass.
     def find(id)
       do_request(:get, "/#{id}") do |response|
         json = methodize_hash(JSON.parse(response.body))
@@ -30,6 +38,7 @@ class CI
       end
     end
    
+   #:nodoc:
     def ci_property_to_method_name(property)
       property = property.to_s
       if method_name = exceptional_property_name_mappings && exceptional_property_name_mappings[property]
@@ -40,7 +49,8 @@ class CI
         property.underscore
       end
     end
-     
+    
+   #:nodoc:  
     def method_name_to_ci_property(method_name)
       method_name = method_name.to_s
       if property_name = exceptional_property_name_mappings && exceptional_property_name_mappings.find{|k,v| v == method_name }
@@ -51,7 +61,8 @@ class CI
         method_name.camelize
       end
     end
-        
+    
+    #:nodoc:
     def ci_properties(*properties)
       exceptional_property_name_mappings ||= HashWithIndifferentAccess.new
       properties = [properties] unless properties.is_a?(Array)
@@ -71,7 +82,7 @@ class CI
       end
     end
     
-    
+    #:nodoc:
     def methodize_hash(hash)
       hash.map_to_hash do |k,v|
         if v.is_a?(Hash)
@@ -83,6 +94,19 @@ class CI
       end
     end
     
+    
+    #:nodoc: 
+    def propertyize_hash(hash)
+      hash.map_to_hash do |k, v|
+        if v.is_a?(Hash)
+          [self.method_name_to_ci_property(k), self.methodize_hash(v)]
+        else
+          [self.method_name_to_ci_property(k), v]
+        end
+      end
+    end
+    
+    #:nodoc:
     def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, calling_instance=nil, &callback)
       raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
       raise "CI.username not set" unless CI.username
@@ -134,20 +158,24 @@ class CI
   attr_accessor :params
   ci_properties :__REPRESENTATION__, :__CLASS__, [:errormessage, :errormessage]
   
+  #Instantiate a subclass of CI with an ActiveRecord-ish hash of properties syntax.
   def initialize(params={})
     raise "class CI is abstract" if self.class == CI
     @params = HashWithIndifferentAccess.new
     params.each { |method_name, value| self.send("#{method_name}=".to_sym, value)} #so overridden accessors wil work
   end
   
+  #:nodoc:
   def errormessage=(string)
     raise "Error from CI API - #{__class__}: #{string}"
   end
   
+  #:nodoc:
   def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, &callback)
     self.class.do_request(http_method, path, headers, put_data, post_params, self, &callback)
   end
   
+  # remove the object from the CI platform.
   def delete
     do_request(:delete, "/#{id}")
     self.data = nil

@@ -1,2 +1,2 @@
-class CI::Recording < CI
+class CI::Recording < CI #:nodoc:
 end

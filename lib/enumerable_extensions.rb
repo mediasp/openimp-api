@@ -1,4 +1,4 @@
-module Enumerable
+module Enumerable #:nodoc:
   def map_to_hash(hash = {}) # or you could give eg a HashWithIndifferentAccess
     each do |x|
       key, value = yield x

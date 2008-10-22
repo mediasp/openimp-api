@@ -92,7 +92,7 @@ class TestFilestore < Test::Unit::TestCase
     width = 800
     max_download_attempts = 5
     max_download_successes = 2
-    token = test_image.resize(width, height, nil, nil, {:MaxDownloadAttempts => max_download_attempts, :MaxDownloadSuccesses => max_download_successes})
+    token = test_image.resize(width, height, nil, nil, {:max_download_attempts => max_download_attempts, :max_download_successes => max_download_successes})
     assert_instance_of CI::FileToken, token
     assert_equal height, token.file.height
     assert_equal width, token.file.width

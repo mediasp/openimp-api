@@ -1,2 +1,2 @@
-class CI::File::Audio < CI::File
+class CI::File::Audio < CI::File #:nodoc:
 end

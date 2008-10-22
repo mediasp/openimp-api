@@ -1,3 +1,3 @@
-class CI::Release < CI
+class CI::Release < CI #:nodoc:
   
 end

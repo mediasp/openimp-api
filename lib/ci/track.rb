@@ -1,3 +1,3 @@
-class CI::Track < CI
+class CI::Track < CI #:nodoc:
   
 end
