@@ -21,9 +21,8 @@ class CI::File < CI
   def self.new_from_file(filename, mime_type=nil)
     self.new({}, ::File.read(filename), mime_type)
   end
-  
-  #:nodoc:      
-  def initialize(params={}, data=nil, mime_type=nil)
+        
+  def initialize(params={}, data=nil, mime_type=nil) #:nodoc:
     super(params)
     self.data=data
     self.mime_type=mime_type if mime_type

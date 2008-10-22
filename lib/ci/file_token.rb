@@ -19,8 +19,8 @@ class CI::FileToken < CI
   ci_properties :Id, [:URL, :url], [:PlayURL, :play_url], :Unlimited, [:file, :file], :AttemptedDownloads, :SuccessfulDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses, :Valid
   self.uri_path = "/filestore"
   
-  #:nodoc:
-  def file=(file_hash)
+  
+  def file=(file_hash) #:nodoc:
     klass = file_hash['__class__'].sub('API', 'CI').constantize
     @params['file'] = klass.new(file_hash)
   end

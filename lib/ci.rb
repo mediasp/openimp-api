@@ -40,8 +40,7 @@ class CI
       end
     end
    
-   #:nodoc:
-    def ci_property_to_method_name(property)
+    def ci_property_to_method_name(property) #:nodoc:
       property = property.to_s
       if method_name = exceptional_property_name_mappings && exceptional_property_name_mappings[property]
         method_name.to_s
@@ -52,8 +51,7 @@ class CI
       end
     end
     
-   #:nodoc:  
-    def method_name_to_ci_property(method_name)
+    def method_name_to_ci_property(method_name) #:nodoc:  
       method_name = method_name.to_s
       if property_name = exceptional_property_name_mappings && exceptional_property_name_mappings.find{|k,v| v == method_name }
         property_name.to_s
@@ -64,8 +62,8 @@ class CI
       end
     end
     
-    #:nodoc:
-    def ci_properties(*properties)
+    
+    def ci_properties(*properties) #:nodoc:
       exceptional_property_name_mappings ||= HashWithIndifferentAccess.new
       properties = [properties] unless properties.is_a?(Array)
       properties.each do |property|
@@ -84,8 +82,7 @@ class CI
       end
     end
     
-    #:nodoc:
-    def methodize_hash(hash)
+    def methodize_hash(hash) #:nodoc:
       hash.map_to_hash do |k,v|
         if v.is_a?(Hash)
           klass = v['__CLASS__'] ? v['__CLASS__'].sub('API', 'CI').constantize : self
@@ -96,9 +93,7 @@ class CI
       end
     end
     
-    
-    #:nodoc: 
-    def propertyize_hash(hash)
+    def propertyize_hash(hash) #:nodoc: 
       hash.map_to_hash do |k, v|
         if v.is_a?(Hash)
           [self.method_name_to_ci_property(k), self.methodize_hash(v)]
@@ -108,8 +103,7 @@ class CI
       end
     end
     
-    #:nodoc:
-    def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, calling_instance=nil, &callback)
+    def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, calling_instance=nil, &callback) #:nodoc:
       raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
       raise "CI.username not set" unless CI.username
       raise "CI.password not set" unless CI.password
@@ -167,13 +161,11 @@ class CI
     params.each { |method_name, value| self.send("#{method_name}=".to_sym, value)} #so overridden accessors wil work
   end
   
-  #:nodoc:
-  def errormessage=(string)
+  def errormessage=(string) #:nodoc:
     raise "Error from CI API - #{__class__}: #{string}"
   end
   
-  #:nodoc:
-  def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, &callback)
+  def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, &callback) #:nodoc:
     self.class.do_request(http_method, path, headers, put_data, post_params, self, &callback)
   end
   
@@ -185,9 +177,7 @@ class CI
    
 end
 
-
-#:nodoc:
-def load_files(dir)
+def load_files(dir) #:nodoc:
   Dir.new(dir).each do |f|
     if f =~ /\.rb$/
       require "#{dir}/#{f}"

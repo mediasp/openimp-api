@@ -21,8 +21,7 @@ class CI::File::Image < CI::File
     'gif' => 'gif'
   }
   
-  #:nodoc:
-  def initialize(params={}, data=nil, mime_type=nil)
+  def initialize(params={}, data=nil, mime_type=nil) #:nodoc:
     super(params, data, mime_type)
     cast_as(self.class) unless __class__ == 'API::File::Image' #Looks tautological, but we need to let the server know that this is an Image.
   end
