@@ -175,10 +175,13 @@ class CI
     self.class.do_request(http_method, path, headers, put_data, post_params, self, &callback)
   end
   
+  
+  # populate this object's attributes from the server
   def get_meta
     do_request(:get, "/#{id}") if id
   end
   
+  # save the contents of this object's attributes to the server
   def store_meta
     do_request(:post, "/#{id}") if id
   end
