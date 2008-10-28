@@ -20,17 +20,18 @@ require 'enumerable_extensions'
 #More details about all the properties of each Class of object are available at https://mfs.ci-support.com/v1/docs
 
 class CI
-  PROTOCOL = :http
-  PORT = 80 
-  HOST = 'api.stage'
-  BASE_PATH = '/v1'
+  @protocol = :https
+  @port = 443
+  @host = 'mfs.ci-support.com'
+  @base_path = '/v1'
 
   class_inheritable_accessor :uri_path
   class_inheritable_accessor :exceptional_property_name_mappings
   
   class << self
 
-    attr_accessor :username, :password   
+  attr_accessor :username, :password, :host, :port, :protocol, :base_path
+  
    #Find  a resource by its id. Will return an instance of the appropriate subclass.
     def find(id)
       do_request(:get, "/#{id}") do |response|
@@ -107,10 +108,10 @@ class CI
       raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
       raise "CI.username not set" unless CI.username
       raise "CI.password not set" unless CI.password
-      path = "#{BASE_PATH}#{(calling_instance ? calling_instance.class : self).uri_path}#{path}"
+      path = "#{CI.base_path}#{(calling_instance ? calling_instance.class : self).uri_path}#{path}"
       headers = (headers || {}).merge('Accept' => 'application/json')
-      connection = Net::HTTP.new(HOST, PORT)
-      if PROTOCOL == :https
+      connection = Net::HTTP.new(CI.host, CI.port)
+      if CI.protocol == :https
         connection.use_ssl = true
         connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
@@ -120,7 +121,7 @@ class CI
       when :head
        Net::HTTP::Head.new(path, headers)
       when :post
-        post_params = (@params.map_to_hash {|k,v| [method_name_to_ci_property(k), v]} || {}) if !post_params
+        post_params = (calling_instance.params.map_to_hash {|k,v| [method_name_to_ci_property(k), v]} || {}) if !post_params && calling_instance
         post_data = post_params.map {|k,v| "#{k}=#{v}"}.join('&')
         headers.merge!('Content-Type' => 'application/x-www-form-urlencoded')
         r = Net::HTTP::Post.new(path, headers)
@@ -139,15 +140,20 @@ class CI
       response = connection.request(req)
       raise "No response recieved!" if !response
       #TODO: deal with exceptional responses.
-      result = if callback
-        callback.call(response)
-      elsif calling_instance
-        calling_instance.params=calling_instance.params.merge(methodize_hash(JSON.parse(response.body)))
-        true
+      case response
+      when Net::HTTPClientError, Net::HTTPServerError
+        raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find {|k,v| v == response.class}[0]}: #{response.body}"#how ugly.
       else
-        self.new(methodize_hash(JSON.parse(response.body)))
+        result = if callback
+          callback.call(response)
+        elsif calling_instance
+          calling_instance.params=calling_instance.params.merge(methodize_hash(JSON.parse(response.body)))
+          true
+        else
+          self.new(methodize_hash(JSON.parse(response.body)))
+        end
+        return result
       end
-      return result
     end
   end
   
@@ -169,12 +175,25 @@ class CI
     self.class.do_request(http_method, path, headers, put_data, post_params, self, &callback)
   end
   
+  def get_meta
+    do_request(:get, "/#{id}") if id
+  end
+  
+  def store_meta
+    do_request(:post, "/#{id}") if id
+  end
+  
+  def save
+    store_meta #override in subclasses that need to do something else
+  end
+  
   # remove the object from the CI platform.
   def delete
     do_request(:delete, "/#{id}")
     self.data = nil
   end
-   
+  
+  class CI::Exception < CI; end #TODO Refactor error handling in a massive and comprehensive way.
 end
 
 def load_files(dir) #:nodoc:

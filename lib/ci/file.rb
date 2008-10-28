@@ -62,7 +62,12 @@ class CI::File < CI
     if @data_changed
       do_request(:put, "/", {'Content-type' => mime_type}, data)
       @data_changed = false
+      get_meta #CI API infers some properties of the file. We need these locally!
     end
+  end
+  
+  def save
+    store
   end
   
   #Retrieve the file data stored remotely. normally CI::File#data should be used for this task, however retrieve will always make a request, returning the file data, and will update the locally cached data returned by CI::File#data.
