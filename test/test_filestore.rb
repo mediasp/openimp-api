@@ -1,21 +1,10 @@
-require File.dirname(__FILE__) + '/test_helper.rb'
-
-TEST_ASSET_FILE = "#{File.dirname(__FILE__)}/test_assets/test_file.txt"
-TEST_IMAGE_FILE = "#{File.dirname(__FILE__)}/test_assets/test_image.jpg"
+require File.dirname(__FILE__) + '/test_common.rb'
 
 class TestFilestore < Test::Unit::TestCase
+  include TestCommon
+  
   def setup
-
-    unless CI.username
-      print "\nUsername: "
-      CI.username = gets.chomp
-    end
-    unless CI.password
-      print "\nPassword: "
-      CI.password = gets.chomp
-      print "\n"
-    end
-    
+    super 
     c = CI::File.new_from_file(TEST_ASSET_FILE, 'text/plain')
     c.store
     @uploaded_id = c.id

@@ -1,12 +1,5 @@
-require File.dirname(__FILE__) + '/test_helper.rb'
+require File.dirname(__FILE__) + '/test_common.rb'
 
 class TestCI < Test::Unit::TestCase
-  def setup
-  end
-  
-  def test_truth
-    assert true
-  end
-  
-  
+  include TestCommon  
 end
