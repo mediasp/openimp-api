@@ -9,7 +9,7 @@
 #Documentation for all these properties can be found in CI's API documentation.
 
 class CI::File < CI
-  ci_properties :Id, :MimeMajor, :MimeMinor, [:SHA1DigestBase64, :sha1_digest_base64], :FileSize, :Stored  
+  ci_properties :Id, :MimeMajor, :MimeMinor, :SHA1DigestBase64, :FileSize, :Stored  
   self.uri_path = '/filestore'
 
   #Create a new file object from a string of data bytes. The mime_type of the data should be passed as a string.
