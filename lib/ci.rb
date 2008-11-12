@@ -200,27 +200,7 @@ class CI
 
   class << self
     attr_accessor :username, :password, :host, :port, :protocol, :base_path, :method_paths
-    
-    def ci_has_many(name)
-      define_method(name, lambda {
-        @params[name] || []
-      })
-      define_method("#{name}=", lambda {|hashes|
-        @params[name] = hashes.map {|hash| CI.instantiate_subclass_from_hash(hash)}
-      })
-    end
 
-    def ci_has_one(name)
-      define_method("#{name}=", lambda { |hash|
-        @params[name] = CI.instantiate_subclass_from_hash(hash)
-      })
-    end
-    
-    def instantiate_subclass_from_hash(hash, klass=nil)
-      klass ||= hash['__class__'].sub('API', 'CI').constantize
-      return klass.new(hash)
-    end
-    
     def ci_property_to_method_name(property) #:nodoc:
       property = property.to_s
       if method_name = exceptional_property_name_mappings && exceptional_property_name_mappings[property]
