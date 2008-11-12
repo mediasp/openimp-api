@@ -85,19 +85,22 @@ class CI
     
     def methodize_hash(hash) #:nodoc:
       hash.map_to_hash do |k,v|
-        method_name = self.ci_property_to_method_name(k)
-        value = if v.is_a?(Hash) then
-          (v['__CLASS__'] ? v['__CLASS__'].sub('API', 'CI').constantize : self).methodize_hash(v)
+        if v.is_a?(Hash)
+          klass = v['__CLASS__'] ? v['__CLASS__'].sub('API', 'CI').constantize : self
+          [self.ci_property_to_method_name(k), klass.methodize_hash(v)]
         else
-          v
+          [self.ci_property_to_method_name(k), v]
         end
-        { method_name => value}
       end
     end
     
     def propertyize_hash(hash) #:nodoc: 
       hash.map_to_hash do |k, v|
-        { self.method_name_to_ci_property(k) => v.is_a?(Hash) ? self.methodize_hash(v) : v }
+        if v.is_a?(Hash)
+          [self.method_name_to_ci_property(k), self.methodize_hash(v)]
+        else
+          [self.method_name_to_ci_property(k), v]
+        end
       end
     end
     
@@ -118,7 +121,7 @@ class CI
       when :head
        Net::HTTP::Head.new(path, headers)
       when :post
-        post_params = (calling_instance.params.map_to_hash {|k,v| { method_name_to_ci_property(k) => v} }) if !post_params && calling_instance
+        post_params = (calling_instance.params.map_to_hash {|k,v| [method_name_to_ci_property(k), v]} || {}) if !post_params && calling_instance
         post_data = post_params.map {|k,v| "#{k}=#{v}"}.join('&')
         headers.merge!('Content-Type' => 'application/x-www-form-urlencoded')
         r = Net::HTTP::Post.new(path, headers)
