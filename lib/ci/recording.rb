@@ -35,23 +35,5 @@ class CI::Recording < CI
   #TODO these should go in CI.rb, once Eleanor's commited her changes. they're all class methods.
   #Also, get rid of exceptional mappings gubbins and capitalize bit from ci_properties, and make method definitions conditional on them not being defined already.
   
-  def ci_has_many(name)
-    define_method(name, lambda {
-      @params[name] || []
-    })
-    define_method("#{name}=", lambda {|hashes|
-      @params[name] = hashes.map {|hash| CI.instantiate_subclass_from_hash(hash)}
-    })
-  end
   
-  def ci_has_one(name)
-    define_method("#{name}=", lambda { |hash|
-      @params[name] = CI.instantiate_subclass_from_hash(hash)
-    })
-  end
-  
-  def instantiate_subclass_from_hash(hash, klass=nil)
-    klass ||= hash['__class__'].sub('API', 'CI').constantize
-    return klass.new(hash)
-  end
 end

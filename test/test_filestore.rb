@@ -4,11 +4,13 @@ class TestFilestore < Test::Unit::TestCase
   include TestCommon
   
   def setup
-    super 
-    c = CI::File.new_from_file(TEST_ASSET_FILE, 'text/plain')
-    c.store
-    @uploaded_id = c.id
-    @uploaded_data = c.data
+    super
+    if !@uploaded_id || !@uploaded_data
+      c = CI::File.new_from_file(TEST_ASSET_FILE, 'text/plain')
+      c.store
+      @uploaded_id = c.id
+      @uploaded_data = c.data
+    end
   end
   
   def test_mime_type_parsing

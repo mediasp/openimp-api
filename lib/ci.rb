@@ -30,7 +30,7 @@ class CI
   
   class << self
 
-  attr_accessor :username, :password, :host, :port, :protocol, :base_path
+  attr_accessor :username, :password, :host, :port, :protocol, :base_path, :uri_path
   
    #Find  a resource by its id. Will return an instance of the appropriate subclass.
     def find(id)
@@ -39,6 +39,26 @@ class CI
         klass = json['__class__'].sub('API', 'CI').constantize
         klass.new(json)
       end
+    end
+   
+    def ci_has_many(name)
+      define_method(name, lambda {
+        @params[name] || []
+      })
+      define_method("#{name}=", lambda {|hashes|
+        @params[name] = hashes.map {|hash| CI.instantiate_subclass_from_hash(hash)}
+      })
+    end
+
+    def ci_has_one(name)
+      define_method("#{name}=", lambda { |hash|
+        @params[name] = CI.instantiate_subclass_from_hash(hash)
+      })
+    end
+
+    def instantiate_subclass_from_hash(hash, klass=nil)
+      klass ||= hash['__class__'].sub('API', 'CI').constantize
+      return klass.new(hash)
     end
    
     def ci_property_to_method_name(property) #:nodoc:
@@ -104,12 +124,17 @@ class CI
       end
     end
     
-    def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, calling_instance=nil, &callback) #:nodoc:
+    def do_request(http_method, path, headers=nil, put_data=nil, post_data=nil, calling_instance=nil, &callback) #:nodoc:
       raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
       raise "CI.username not set" unless CI.username
       raise "CI.password not set" unless CI.password
       path = "#{CI.base_path}#{(calling_instance ? calling_instance.class : self).uri_path}#{path}"
+      puts "PATH: #{path}"
+      puts "METHOD: #{http_method}"
+      puts "HEADERS: "
       headers = (headers || {}).merge('Accept' => 'application/json')
+      require 'pp'
+      pp headers
       connection = Net::HTTP.new(CI.host, CI.port)
       if CI.protocol == :https
         connection.use_ssl = true
@@ -121,9 +146,13 @@ class CI
       when :head
        Net::HTTP::Head.new(path, headers)
       when :post
-        post_params = (calling_instance.params.map_to_hash {|k,v| [method_name_to_ci_property(k), v]} || {}) if !post_params && calling_instance
-        post_data = post_params.map {|k,v| "#{k}=#{v}"}.join('&')
-        headers.merge!('Content-Type' => 'application/x-www-form-urlencoded')
+        post_data = (calling_instance.params.map_to_hash {|k,v| [method_name_to_ci_property(k), v]} || {}) if !post_data && calling_instance
+        if post_data.kind_of?(Hash)
+          post_data = post_data.map {|k,v| "#{k}=#{v}"}.join('&')
+          headers.merge!('Content-Type' => 'application/x-www-form-urlencoded')
+        end
+        puts "POST DATA: #{post_data}"
+        headers.merge!('Content-length' => post_data.length.to_s)
         r = Net::HTTP::Post.new(path, headers)
         r.body = post_data
         r

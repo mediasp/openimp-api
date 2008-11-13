@@ -60,7 +60,7 @@ class CI::File < CI
   #Store this File object remotely in the CI MFS API. If the local file does not differ from the remote one, this will do nothing.
   def store
     if @data_changed
-      do_request(:put, "/", {'Content-type' => mime_type}, data)
+      do_request(:post, "/", {'Content-type' => mime_type}, nil ,data)
       @data_changed = false
       get_meta #CI API infers some properties of the file. We need these locally!
     end
