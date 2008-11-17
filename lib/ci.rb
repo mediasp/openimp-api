@@ -1,5 +1,6 @@
-$:.unshift(File.dirname(__FILE__)) unless
-  $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
+_mypath = File.dirname(__FILE__)
+$:.unshift(_mypath) unless $:.include?(_mypath) || $:.include?(File.expand_path(_mypath))
+_mypath = nil
 
 require 'rubygems'
 require 'json'
@@ -8,224 +9,127 @@ require 'net/http'
 require 'net/https'
 require 'rexml/document'
 require 'activesupport'
-require 'enumerable_extensions'
+require 'core_extensions'
+require 'singleton'
 
-#This class holds configuration information for the entire app as class instance variables, and subclasses inherit common functionality from it. It is abstract and therefore cannot be instantiated.
-#
 #Your username and password for the CI api should be set with:
-#* CI.username='username'
-#* CI.password='password'
-#Each subclass instance has a .__representation__, .__class__ and errormessage property, corresponding to the __REPRESENTATION__, __CLASS__ and errormessage properties of the API.
+#* CI::MediaFileServer.configure 'username', 'password'
 #
 #More details about all the properties of each Class of object are available at https://mfs.ci-support.com/v1/docs
 
-class CI
-  @protocol = :https
-  @port = 443
-  @host = 'mfs.ci-support.com'
-  @base_path = '/v1'
+module CI
+  class MediaFileServer
+    include Singleton
 
-  class_inheritable_accessor :uri_path
-  class_inheritable_accessor :exceptional_property_name_mappings
-  
-  class << self
+    PROTOCOL = :https
+    PORT = 443
+    HOST = 'mfs.ci-support.com'
+    VERSION = 'v1'
+    API_ATTRIBUTES = SymmetricTranslationTable.new(:api, :ruby)
+    BOOLEAN_ATTRIBUTES = []
 
-  attr_accessor :username, :password, :host, :port, :protocol, :base_path, :uri_path
-  
-   #Find  a resource by its id. Will return an instance of the appropriate subclass.
-    def find(id)
-      do_request(:get, "/#{id}") do |response|
-        json = methodize_hash(JSON.parse(response.body))
-        klass = json['__class__'].sub('API', 'CI').constantize
-        klass.new(json)
-      end
-    end
-   
-    def ci_has_many(name)
-      define_method(name, lambda {
-        @params[name] || []
-      })
-      define_method("#{name}=", lambda {|hashes|
-        @params[name] = hashes.map {|hash| CI.instantiate_subclass_from_hash(hash)}
-      })
+    def self.method_missing method, *arguments, &block  # :nodoc:
+      # A dirty little hack to obviate the need of writing MediaFileServer.instance.method
+      # to access instance methods
+      instance.send method, *arguments, &block
     end
 
-    def ci_has_one(name)
-      define_method("#{name}=", lambda { |hash|
-        @params[name] = CI.instantiate_subclass_from_hash(hash)
-      })
+    def configure username, password, options = {}
+      @username = username
+      @password = password
+      @protocol = options[:protocol] || :https
+      @host = options[:host] || 'mfs.ci-support.com'
+      @port = options[:port] || 443
+      @version = 'v1'
     end
 
-    def instantiate_subclass_from_hash(hash, klass=nil)
-      klass ||= hash['__class__'].sub('API', 'CI').constantize
-      return klass.new(hash)
-    end
-   
-    def ci_property_to_method_name(property) #:nodoc:
-      property = property.to_s
-      if method_name = exceptional_property_name_mappings && exceptional_property_name_mappings[property]
-        method_name.to_s
-      elsif property =~ /^\_\_/
-        property.downcase
-      else
-        property.underscore
+    def resolve asset, id = nil, action = nil
+      path = "/#{@version}/#{asset}"
+      if id then
+        path += "/#{id}"
+        if action then
+          path += "/#{action}"
+        end
       end
     end
-    
-    def method_name_to_ci_property(method_name) #:nodoc:  
-      method_name = method_name.to_s
-      if property_name = exceptional_property_name_mappings && exceptional_property_name_mappings.find{|k,v| v == method_name }
-        property_name.to_s
-      elsif method_name =~ /^\_\_/
-        method_name.upcase
-      else
-        method_name.camelize
-      end
+
+    def get url
+      json_query(url) { |url, p| Net::HTTP::Get.new(url) }
     end
-    
-    
-    def ci_properties(*properties) #:nodoc:
-      exceptional_property_name_mappings ||= HashWithIndifferentAccess.new
-      properties = [properties] unless properties.is_a?(Array)
-      properties.each do |property|
-        if property.is_a?(Array)
-          exceptional_property_name_mappings.merge!({property[0] => property[1]})
-          method = property[1].to_s
+
+    def get_octet_stream url
+      Net::HTTP.start(@host, @port) do |connection|
+        if @protocol == :https then
+          connection.use_ssl = true
+          connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
+        request = Net::HTTP::Get.new(url)
+        request[:accept] = 'application/json'
+        request.basic_auth(@username, @password)
+        case response = connection.request(request)
+        when nil
+          raise "No response received!"
+        when Net::HTTPClientError, Net::HTTPServerError
+          raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
         else
-          method = CI.ci_property_to_method_name(property)
+          response.body
         end
-        define_method(method, lambda {
-            @params[method]
-        })
-        define_method(method + '=', lambda{ |value|
-          @params[method] = value
-        })
       end
     end
-    
-    def methodize_hash(hash) #:nodoc:
-      hash.map_to_hash do |k,v|
-        if v.is_a?(Hash)
-          klass = v['__CLASS__'] ? v['__CLASS__'].sub('API', 'CI').constantize : self
-          [self.ci_property_to_method_name(k), klass.methodize_hash(v)]
+
+    def head url
+      json_query(url) { |url, p| Net::HTTP::Head.new(url) }
+    end
+
+    def post url, properties
+      json_query(url, properties) { |url, p| Net::HTTP::Post.new(url, p.to_query) }
+    end
+
+    def put url, content_type, data
+      json_query(url, data) { |url, p| Net::HTTP::Put.new(url, p, {'Content-Length' => p.length, 'Content-Type' => content_type}) }
+    end
+
+    def delete url
+      if block_given? then
+        yield(json_request(url) { |url| get(url) })
+      end
+      json_query(url) { |url, p| Net::HTTP::Delete.new(url) }
+    end
+
+  private
+    # The API uses a custom JSON format for encoding class data. A +json_query+ automatically takes
+    # care of the necessary translation to return a response object of the correct class.
+    def json_query url, attributes = {}, &block
+      # Preprocess data before sending it to the server
+      a = attributes.inject({}) do |h, (k, v)|
+        # Boolean values are treated as true = 1 and false = 0 by the CI API
+        h[k] = if BOOLEAN_ATTRIBUTES.include?(k) then
+          v ? 1 : 0
+        else v
+        end
+      end
+      Net::HTTP.start(@host, @port) do |connection|
+        if @protocol == :https then
+          connection.use_ssl = true
+          connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
+        request = yield(url, a)
+        request[:accept] = 'application/json'
+        request.basic_auth(@username, @password)
+        case response = connection.request(request)
+        when nil
+          raise "No response received!"
+        when Net::HTTPClientError, Net::HTTPServerError
+          raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
         else
-          [self.ci_property_to_method_name(k), v]
+          JSON.instance_variable_set "@#{create_id}", '__CLASS__'
+          result = JSON.parse(response.body)
+          JSON.instance_variable_set "@#{create_id}", 'json_class'
+          result
         end
       end
     end
-    
-    def propertyize_hash(hash) #:nodoc: 
-      hash.map_to_hash do |k, v|
-        if v.is_a?(Hash)
-          [self.method_name_to_ci_property(k), self.methodize_hash(v)]
-        else
-          [self.method_name_to_ci_property(k), v]
-        end
-      end
-    end
-    
-    def do_request(http_method, path, headers=nil, put_data=nil, post_data=nil, calling_instance=nil, &callback) #:nodoc:
-      raise "do_request cannot be called with class CI as the explicit reciever" if self == CI
-      raise "CI.username not set" unless CI.username
-      raise "CI.password not set" unless CI.password
-      path = "#{CI.base_path}#{(calling_instance ? calling_instance.class : self).uri_path}#{path}"
-      puts "PATH: #{path}"
-      puts "METHOD: #{http_method}"
-      puts "HEADERS: "
-      headers = (headers || {}).merge('Accept' => 'application/json')
-      require 'pp'
-      pp headers
-      connection = Net::HTTP.new(CI.host, CI.port)
-      if CI.protocol == :https
-        connection.use_ssl = true
-        connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      end
-      req = case http_method
-      when :get
-        Net::HTTP::Get.new(path, headers)
-      when :head
-       Net::HTTP::Head.new(path, headers)
-      when :post
-        post_data = (calling_instance.params.map_to_hash {|k,v| [method_name_to_ci_property(k), v]} || {}) if !post_data && calling_instance
-        if post_data.kind_of?(Hash)
-          post_data = post_data.map {|k,v| "#{k}=#{v}"}.join('&')
-          headers.merge!('Content-Type' => 'application/x-www-form-urlencoded')
-        end
-        puts "POST DATA: #{post_data}"
-        headers.merge!('Content-length' => post_data.length.to_s)
-        r = Net::HTTP::Post.new(path, headers)
-        r.body = post_data
-        r
-      when :put
-        raise "You must supply a Content-type to perform a PUT request" unless headers['Content-type']
-        headers.merge!('Content-length' => put_data.length.to_s)
-        r = Net::HTTP::Put.new(path, headers)
-        r.body = put_data
-        r
-      when :delete
-        Net::HTTP::Delete.new(path, headers)
-      end
-      req.basic_auth(CI.username, CI.password)
-      response = connection.request(req)
-      raise "No response recieved!" if !response
-      #TODO: deal with exceptional responses.
-      case response
-      when Net::HTTPClientError, Net::HTTPServerError
-        raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find {|k,v| v == response.class}[0]}: #{response.body}"#how ugly.
-      else
-        result = if callback
-          callback.call(response)
-        elsif calling_instance
-          calling_instance.params=calling_instance.params.merge(methodize_hash(JSON.parse(response.body)))
-          true
-        else
-          self.new(methodize_hash(JSON.parse(response.body)))
-        end
-        return result
-      end
-    end
   end
-  
-  attr_accessor :params
-  ci_properties :__REPRESENTATION__, :__CLASS__, [:errormessage, :errormessage]
-  
-  #Instantiate a subclass of CI with an ActiveRecord-ish hash of properties syntax.
-  def initialize(params={})
-    raise "class CI is abstract" if self.class == CI
-    @params = HashWithIndifferentAccess.new
-    params.each { |method_name, value| self.send("#{method_name}=".to_sym, value)} #so overridden accessors wil work
-  end
-  
-  def errormessage=(string) #:nodoc:
-    raise "Error from CI API - #{__class__}: #{string}"
-  end
-  
-  def do_request(http_method, path, headers=nil, put_data=nil, post_params=nil, &callback) #:nodoc:
-    self.class.do_request(http_method, path, headers, put_data, post_params, self, &callback)
-  end
-  
-  
-  # populate this object's attributes from the server
-  def get_meta
-    do_request(:get, "/#{id}") if id
-  end
-  
-  # save the contents of this object's attributes to the server
-  def store_meta
-    do_request(:post, "/#{id}") if id
-  end
-  
-  def save
-    store_meta #override in subclasses that need to do something else
-  end
-  
-  # remove the object from the CI platform.
-  def delete
-    do_request(:delete, "/#{id}")
-    self.data = nil
-  end
-  
-  class CI::Exception < CI; end #TODO Refactor error handling in a massive and comprehensive way.
 end
 
 def load_files(dir) #:nodoc:
@@ -238,4 +142,3 @@ def load_files(dir) #:nodoc:
   end
 end
 load_files(File.dirname(__FILE__) + '/ci/')
-

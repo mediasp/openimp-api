@@ -15,14 +15,28 @@
 #You shouldn't really have any need to initialize this class directly or alter it, and changed cannot be persisted back to the CI backend as a result.
 #It can be created by calling create_token or an associated method on an instance of CI::File or one of its subclasses.
 
-class CI::FileToken < CI
-  ci_properties :Id, :URL, :play_url, :Unlimited, :file, :AttemptedDownloads, :SuccessfulDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses, :Valid
-  self.uri_path = "/filestore"
-  
-  
-  def file=(file_hash) #:nodoc:
-    klass = file_hash['__class__'].sub('API', 'CI').constantize
-    @params['file'] = klass.new(file_hash)
+module CI
+  class FileToken < Asset
+    api_attr_reader   :URL, :PlayURL, :Unlimited, :RedirectWhenExpiredUrl
+    api_attr_reader   :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
+    api_attr_reader   :Valid
+    api_attr_boolean  :Valid, :Unlimited
+    has_one           :file
+    self.base_url = "/filetoken"
+
+    # The CI API exposes a FileToken creation via several different URLs. However we will never want to create
+    # a file token that we do not already have a file to hand, and hence we only use the FileStore URL.
+    def self.create file, properties = {}
+      post File.url(file.id, 'createfiletoken'), properties
+    end
+
+    # As an alternative a FileToken object can be created and the appropriate values set, then the save method
+    # called which creates the token on the server and its details loaded.
+    def save!
+      FileToken.create file, {  :RedirectWhenExpiredUrl => redirect_when_expired_url,
+                                :Unlimited => unlimited,
+                                :MaxDownloadAttempts => max_download_attempts,
+                                :MaxDownloadSuccesses => max_download_successes   }
+    end
   end
-  
 end

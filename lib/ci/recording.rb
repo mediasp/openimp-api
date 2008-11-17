@@ -1,3 +1,14 @@
+module CI
+  class Recording < Asset
+    api_attr_reader   :tracks, :files, :ISRC, :Duration
+    api_attr_reader   :LabelName, :Producers, :Mixers
+    api_attr_reader   :Composers, :Lyricists
+    api_attr_reader   :MainArtist, :FeaturedArtists, :Artists
+  end
+end
+
+
+
 class CI::Recording < CI
   ci_properties :tracks, :LabelName, :files, :Composers, :Lyricists, :Producers, :MainArtist, :Artists, :Mixers, :Publishers, :ISRC, :FeaturedArtists, :Duration
   self.uri_path = "/recording/isrc"

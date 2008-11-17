@@ -1,3 +1,4 @@
+=begin
 #CI File subclass for image files.
 #
 #Has additional properties as well as those inherited from CI::File:
@@ -44,10 +45,11 @@ class CI::File::Image < CI::File
     params = {:targetY => target_height, :targetX =>target_width, :targetType => target_type, :resizeType => method}
     params.merge!(:Synchronous => 'on') if synchronous
     if token_properties
-      params.merge!(CI::FileToken.propertyize_hash(token_properties))
+      params.merge!(CI::FileToken.phrase_as_api_methods(token_properties))
       CI::FileToken.do_request(:post, "/#{id}/contextualmethod/Resize/createfiletoken", nil, nil, params)
     else
       CI::File::Image.do_request(:post, "/#{id}/contextualmethod/Resize", nil, nil, params)
     end
   end
 end
+=end

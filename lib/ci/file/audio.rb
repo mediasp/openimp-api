@@ -1,2 +1,5 @@
-class CI::File::Audio < CI::File #:nodoc:
+module CI
+  class File::Audio < File
+    api_attr_reader :Tracks, :BitRate, :encoding
+  end
 end
