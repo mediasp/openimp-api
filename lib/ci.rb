@@ -9,7 +9,7 @@ require 'net/http'
 require 'net/https'
 require 'rexml/document'
 require 'activesupport'
-require 'core_extensions'
+require 'core_extensions.rb'
 require 'singleton'
 
 #Your username and password for the CI api should be set with:
@@ -50,6 +50,8 @@ module CI
         if action then
           path += "/#{action}"
         end
+      end
+    end
 
     def get url
       json_query(url) { |url, p| Net::HTTP::Get.new(url) }

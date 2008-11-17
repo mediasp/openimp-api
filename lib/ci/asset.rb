@@ -1,9 +1,19 @@
-require 'rubygems'
-require 'json'
-require 'core_extensions'
-
 module CI
   class Asset
+    
+    def self.class_inheritable_accessor(*args)
+      args.each do |arg|
+        class_eval "
+          def self.#{arg}
+            @#{arg} ||= superclass.#{arg} unless self == CI::Asset
+          end 
+          def self.#{arg}=(val)
+            @#{arg}=val
+          end
+        "
+      end
+    end
+        
     class_inheritable_accessor  :base_url, :api_class_name
     class_inheritable_accessor  :attributes, :boolean_attributes
     self.base_url = ""
