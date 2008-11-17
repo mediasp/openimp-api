@@ -9,7 +9,7 @@ require 'net/http'
 require 'net/https'
 require 'rexml/document'
 require 'activesupport'
-require 'core_extensions'
+require 'core_extensions.rb'
 require 'singleton'
 
 #Your username and password for the CI api should be set with:
@@ -27,7 +27,11 @@ module CI
     VERSION = 'v1'
     API_ATTRIBUTES = SymmetricTranslationTable.new(:api, :ruby)
     BOOLEAN_ATTRIBUTES = []
-
+    
+    class << self
+      attr_accessor :username, :password, :protocol, :host, :port
+    end
+    
     def self.method_missing method, *arguments, &block  # :nodoc:
       # A dirty little hack to obviate the need of writing MediaFileServer.instance.method
       # to access instance methods
