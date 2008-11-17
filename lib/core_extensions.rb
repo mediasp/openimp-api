@@ -44,7 +44,6 @@ class SymmetricTranslationTable
     c.send :define_method, :"[]", lambda { |name|
       @right[name] || @left[name]
       }
-END
   end
 end
 
