@@ -1,5 +1,35 @@
 class CI::Release < CI
-  ci_properties :PLineYear, :tracks, :subgenres, :CLineText, :PriceRangeType, :ReferenceFile, :Genres, :FeaturedArtists, :Imagefrontcover, :SubTitle, :Duration, :ParentalWarningType, :LabelName, :CLineYear, :ReleaseType, :CatalogNumber, :PLineText, :MainArtist, :DisplayArtist, :UPC, :TrackCount
+  self.uri_path = '/release/upc'
+  
+  ci_properties *[
+    :PLineYear,
+    :tracks,
+    :SubGenres,
+    :CLineText,
+    :PriceRangeType,
+    :ReferenceTitle,
+    :Genres,
+    :FeaturedArtists,
+    :Imagefrontcover,
+    :SubTitle,
+    :Duration,
+    :ParentalWarningType,
+    :LabelName,
+    :CLineYear,
+    :ReleaseType,
+    :CatalogNumber,
+    :PLineText,
+    :MainArtist,
+    :DisplayArtist, 
+    :UPC,
+    :TrackCount,
+    :artists
+  ]
+  
+  def artists
+    @params[:artists] || []
+  end
+  
   #TODO code to convert ISO Durations and dates / times to ruby objects.
   #Do we need to keep exceptional_mappings for :Imagefrontcover?
   #use ci property name when defining relations?

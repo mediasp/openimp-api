@@ -5,8 +5,12 @@ require File.dirname(__FILE__) + '/../lib/ci'
 module TestCommon  
   TEST_ASSET_FILE = "#{File.dirname(__FILE__)}/test_assets/test_file.txt"
   TEST_IMAGE_FILE = "#{File.dirname(__FILE__)}/test_assets/test_image.jpg"
+  TEST_UPC = 634904120498
   
   def setup
+    CI.protocol = :http
+    CI.port = 80
+    CI.host = 'api.stage'
     unless CI.username
       print "\nUsername: "
       CI.username = gets.chomp

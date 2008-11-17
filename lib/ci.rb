@@ -50,8 +50,6 @@ module CI
         if action then
           path += "/#{action}"
         end
-      end
-    end
 
     def get url
       json_query(url) { |url, p| Net::HTTP::Get.new(url) }
