@@ -4,7 +4,7 @@ module Enumerable #:nodoc:
   end
 
   def cartesian other
-    inject([]) { |array, x| array << other.collect { |y| [x, y]} }
+    inject([]) { |array, x| array << other.collect { |y| [x, y] } }
   end
 
 =begin
@@ -30,18 +30,19 @@ end
 
 class SymmetricTranslationTable
   def initialize right, left
-    instance_variable_set :"@#{right}", {}
-    instance_variable_set :"@#{left}", {}
-    define_method :"define_#{right}_term", lambda { |name, value|
-      instance_variable_get(:"@#{right}")[name] = value
-      instance_variable_get(:"@#{left}")[value] = name
+    @right, @left = {}, {}
+    c = class << self; self; end
+    c.send :define_method, :"define_#{right}_term", lambda { |name, value|
+      @right[name] = value
+      @left[value] = name
       }
-    define_method :"define_#{left}_term", lambda { |name, value|
-      instance_variable_get(:"@#{left}")[name] = value
-      instance_variable_get(:"@#{right}")[value] = name
+    c.send :define_method, :"define_#{left}_term", lambda { |name, value|
+      @left[name] = value
+      @right[value] = name
       }
-    define_method :"[]", lambda { |name|
-      instance_variable_get(:"@#{right}")[name] || instance_variable_get(:"@#{left}")[name]
+    # The following adds a bias in favour of right-hand definitions.
+    c.send :define_method, :"[]", lambda { |name|
+      @right[name] || @left[name]
       }
   end
 end
