@@ -8,16 +8,16 @@ module TestCommon
   TEST_UPC = 634904120498
   
   def setup
-    CI.protocol = :http
-    CI.port = 80
-    CI.host = 'api.stage'
-    unless CI.username
+    CI::MediaFileServer.protocol = :http
+    CI::MediaFileServer.port = 80
+    CI::MediaFileServer.host = 'api.stage'
+    unless CI::MediaFileServer.username
       print "\nUsername: "
-      CI.username = gets.chomp
+      CI::MediaFileServer.username = gets.chomp
     end
-    unless CI.password
+    unless CI::MediaFileServer.password
       print "\nPassword: "
-      CI.password = gets.chomp
+      CI::MediaFileServer.password = gets.chomp
       print "\n"
     end
   end
