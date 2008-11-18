@@ -24,7 +24,7 @@ module CI
     end
 
     def url action = nil
-      Asset.url id, action
+      self.class.url id, action
     end
 
   public

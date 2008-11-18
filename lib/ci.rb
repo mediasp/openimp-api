@@ -40,17 +40,17 @@ module CI
       @protocol = options[:protocol] || :https
       @host = options[:host] || 'mfs.ci-support.com'
       @port = options[:port] || 443
-      @version = 'v1'
     end
 
     def resolve asset, id = nil, action = nil
-      path = "/#{@version}/#{asset}"
+      path = "/#{VERSION}/#{asset}"
       if id then
         path += "/#{id}"
         if action then
           path += "/#{action}"
         end
       end
+      return path
     end
 
     def get url
@@ -86,7 +86,7 @@ module CI
     end
 
     def put url, content_type, payload
-      json_query(url, nil, payload) { |url, a, p| Net::HTTP::Put.new(url, p, {'Content-Length' => p.length, 'Content-Type' => content_type}) }
+      json_query(url, {'Content-Length' => payload.length, 'Content-Type' => content_type}, payload) { |url, a, p| req = Net::HTTP::Put.new(url, a); req.body = p; req }
     end
 
     def delete url
@@ -104,9 +104,10 @@ module CI
       a = attributes.inject({}) do |h, (k, v)|
         # Boolean values are treated as true = 1 and false = 0 by the CI API
         h[k] = if BOOLEAN_ATTRIBUTES.include?(k) then
-          v ? 1 : 0
-        else v
+          (v ? 1 : 0).to_s
+        else v.to_s
         end
+        h
       end
       Net::HTTP.start(@host, @port) do |connection|
         if @protocol == :https then
@@ -114,7 +115,7 @@ module CI
           connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
         request = yield(url, a, payload)
-        request[:accept] = 'application/json'
+        request['Accept'] = 'application/json'
         request.basic_auth(@username, @password)
         case response = connection.request(request)
         when nil
@@ -122,9 +123,9 @@ module CI
         when Net::HTTPClientError, Net::HTTPServerError
           raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
         else
-          JSON.instance_variable_set "@#{create_id}", '__CLASS__'
+          JSON.instance_variable_set "@create_id", '__CLASS__'
           result = JSON.parse(response.body)
-          JSON.instance_variable_set "@#{create_id}", 'json_class'
+          JSON.instance_variable_set "@create_id", 'json_class'
           result
         end
       end

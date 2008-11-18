@@ -22,7 +22,7 @@ module CI
     api_attr_reader   :Valid
     api_attr_boolean  :Valid, :Unlimited
     has_one           :file
-    self.base_url = "/filetoken"
+    self.base_url = "filetoken"
 
     # The CI API exposes a FileToken creation via several different URLs. However we will never want to create
     # a file token that we do not already have a file to hand, and hence we only use the FileStore URL.

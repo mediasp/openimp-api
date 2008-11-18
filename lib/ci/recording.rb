@@ -7,8 +7,7 @@ module CI
     has_many          :tracks
     has_many          :files
     alias_method :id, :isrc
-    alias_method :id=, :isrc=
-    self.base_url = "/recording/isrc"
+    self.base_url = "recording/isrc"
 
     def initialize
       super

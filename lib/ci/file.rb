@@ -10,9 +10,9 @@
 
 module CI
   class File < Asset
-    api_attr_reader   :Stored, :MimeMajor, :MimeMinor, :FileSize
-    api_attr_reader   :SHA1DigestBase64, :UploaderIP, :Stored
-    self.base_url = "/filestore"
+    api_attr_accessor :MimeMajor, :MimeMinor
+    api_attr_reader   :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
+    self.base_url = "filestore"
 
 
     def self.new_from_file(file, mime_type)
@@ -22,7 +22,7 @@ module CI
     def initialize parameters = {}, data = ""
       super parameters
       @dirty = data && data.length > 0
-      mime_type = parameters[:mime_type]
+      self.mime_type = parameters[:mime_type] if parameters[:mime_type]
       @content = data
     end
 
@@ -42,7 +42,7 @@ module CI
     end
 
     def mime_type= specifier
-      mime_major, mime_minor = specifier.split("/")
+      self.mime_major, self.mime_minor = *specifier.split("/")
     end
 
     # Retrieve the data content associated with this file
