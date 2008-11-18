@@ -13,7 +13,6 @@ module CI
         "
       end
     end
-        
     class_inheritable_accessor  :base_url, :api_class_name
     class_inheritable_accessor  :attributes, :boolean_attributes
     self.base_url = ""
@@ -32,7 +31,7 @@ module CI
   public
     def self.api_attr api_method, writeable = false #:nodoc:
       ruby_method = api_method.to_method_name
-      MediaFileServer.ATTRIBUTES.define_api_term api_method, ruby_method
+      MediaFileServer::API_ATTRIBUTES.define_api_term api_method, ruby_method
       define_method ruby_method, lambda { @parameters[api_method] }
       define_method "#{ruby_method}=", lambda { |v|
         @parameters[api_method] = (MediaFileServer::BOOLEAN_ATTRIBUTES.include?(api_method) ? (v == 1) : v)
@@ -40,11 +39,11 @@ module CI
     end
 
     def self.api_attr_reader *api_methods #:nodoc:
-      Array.new(api_methods).each { |attribute| attr attribute, false }
+      Array.new(api_methods).each { |attribute| api_attr attribute, false }
     end
 
     def self.api_attr_accessor *api_methods #:nodoc:
-      Array.new(api_methods).each { |attribute| attr attribute, true }
+      Array.new(api_methods).each { |attribute| api_attr attribute, true }
     end
 
     def self.api_attr_boolean *api_methods
@@ -78,19 +77,18 @@ module CI
 
     # We use a custom constructor to automatically load the correct object from the
     # CI MFS system if the parameters to +new+ include an +id+.
-    def self.new parameters = {}
-      if parameters.has_key?('id') then
+    def self.new parameters={}, *args
+      unless parameters.has_key?('id') then
         asset = allocate
-        asset.initialize parameters
+        asset.send :initialize, *([parameters] + args)
         asset
       else
         load id
       end
     end
 
-    api_attr_reader     :Id
-    api_attr_accessor   :__REPRESENTATION__
-
+    api_attr_reader :Id, :__CLASS__, :__REPRESENTATION
+    
     def initialize parameters = {}
       @parameters = {}
       parameters.each { |k, v| self.send("#{k}=", v) rescue nil }
@@ -124,7 +122,7 @@ module CI
     end
 
     def put content_type, data
-      MediaFileServer.put url(), content_type, properties
+      MediaFileServer.put url(), content_type, data
     end
   end
 end

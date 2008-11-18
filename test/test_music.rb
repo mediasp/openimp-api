@@ -3,6 +3,6 @@ class TestMusic < Test::Unit::TestCase
   include TestCommon
   
   def test_get_release
-    r = CI::Release.find(TEST_UPC)
+    r = CI::Release.new(:id => TEST_UPC)
   end
 end

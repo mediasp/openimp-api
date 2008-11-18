@@ -14,10 +14,15 @@ module CI
     api_attr_reader   :SHA1DigestBase64, :UploaderIP, :Stored
     self.base_url = "/filestore"
 
+
+    def self.new_from_file(file, mime_type)
+      new({:mime_type => mime_type}, ::File.read(file))
+    end
+    
     def initialize parameters = {}, data = ""
-      super
-      @dirty = false
-      @original_mime_type = mime_type
+      super parameters
+      @dirty = data && data.length > 0
+      mime_type = parameters[:mime_type]
       @content = data
     end
 

@@ -28,10 +28,6 @@ module CI
     API_ATTRIBUTES = SymmetricTranslationTable.new(:api, :ruby)
     BOOLEAN_ATTRIBUTES = []
     
-    class << self
-      attr_accessor :username, :password, :protocol, :host, :port
-    end
-    
     def self.method_missing method, *arguments, &block  # :nodoc:
       # A dirty little hack to obviate the need of writing MediaFileServer.instance.method
       # to access instance methods
