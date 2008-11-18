@@ -85,8 +85,8 @@ module CI
       json_query(url, properties) { |url, p| Net::HTTP::Post.new(url, p.to_query) }
     end
 
-    def put url, content_type, data
-      json_query(url, data) { |url, p| Net::HTTP::Put.new(url, p, {'Content-Length' => p.length, 'Content-Type' => content_type}) }
+    def put url, content_type, payload
+      json_query(url, nil, payload) { |url, a, p| Net::HTTP::Put.new(url, p, {'Content-Length' => p.length, 'Content-Type' => content_type}) }
     end
 
     def delete url
@@ -99,7 +99,7 @@ module CI
   private
     # The API uses a custom JSON format for encoding class data. A +json_query+ automatically takes
     # care of the necessary translation to return a response object of the correct class.
-    def json_query url, attributes = {}, &block
+    def json_query url, attributes = {}, payload = nil, &block
       # Preprocess data before sending it to the server
       a = attributes.inject({}) do |h, (k, v)|
         # Boolean values are treated as true = 1 and false = 0 by the CI API
@@ -113,7 +113,7 @@ module CI
           connection.use_ssl = true
           connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
-        request = yield(url, a)
+        request = yield(url, a, payload)
         request[:accept] = 'application/json'
         request.basic_auth(@username, @password)
         case response = connection.request(request)

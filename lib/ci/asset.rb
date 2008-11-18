@@ -1,6 +1,5 @@
 module CI
   class Asset
-    
     def self.class_inheritable_accessor(*args)
       args.each do |arg|
         class_eval "
@@ -20,8 +19,8 @@ module CI
     self.boolean_attributes = []
 
   private
-    def self.url id, action = nil
-      MediaFileServer.resolve self.base_url, id, action
+    def self.url id, *actions
+      MediaFileServer.resolve self.base_url, id, actions.join("/")
     end
 
     def url action = nil
@@ -87,8 +86,8 @@ module CI
       end
     end
 
-    api_attr_reader :Id, :__CLASS__, :__REPRESENTATION
-    
+    api_attr_reader     :Id, :__REPRESENTATION__
+
     def initialize parameters = {}
       @parameters = {}
       parameters.each { |k, v| self.send("#{k}=", v) rescue nil }

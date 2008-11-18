@@ -109,7 +109,6 @@ module CI
     RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif' }
 
     def resize width, height, constraint = :nomodifier, type = nil, synchronous = nil, token_properties = {}
-      synchronoous = properties[:synchronous]
       post url('resize'), properties
     end
   end
