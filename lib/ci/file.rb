@@ -43,11 +43,7 @@ module CI
 
     def store!
       file = store
-      file.become_sub_type rescue file
-      @parameters[:Id] = file.id
-      __representation__ = file.__representation__
-      sha1_digest_base64 = file.sha1_digest_base64
-      stored = file.stored
+      @parameters = file.parameters
       self
     end
     

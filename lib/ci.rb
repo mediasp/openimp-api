@@ -25,7 +25,6 @@ module CI
     PORT = 443
     HOST = 'mfs.ci-support.com'
     VERSION = 'v1'
-    BOOLEAN_ATTRIBUTES = []
     
     def self.method_missing method, *arguments, &block  # :nodoc:
       # A dirty little hack to obviate the need of writing MediaFileServer.instance.method
@@ -89,7 +88,7 @@ module CI
     end
 
     def put url, content_type, payload
-      json_query(url, {'Content-Length' => payload.length, 'Content-Type' => content_type}, payload) do |url, p, data|
+      json_query(url, {'Content-Length' => payload.length.to_s, 'Content-Type' => content_type}, payload) do |url, p, data|
         request = Net::HTTP::Put.new(url, p)
         request.body = data
         request
@@ -109,21 +108,12 @@ module CI
     #
     # TODO: Improve error handling to be useful.
     def json_query url, attributes = {}, payload = nil, &block
-      # Preprocess data before sending it to the server
-      a = attributes.inject({}) do |h, (k, v)|
-        # Boolean values are treated as true = 1 and false = 0 by the CI API
-        h[k] = if BOOLEAN_ATTRIBUTES.include?(k) then
-          (v ? 1 : 0).to_s
-        else v.to_s
-        end
-        h
-      end
       Net::HTTP.start(@host, @port) do |connection|
         if @protocol == :https then
           connection.use_ssl = true
           connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
-        request = yield(url, a, payload)
+        request = yield(url, attributes, payload)
         request['Accept'] = 'application/json'
         request.basic_auth(@username, @password)
         case response = connection.request(request)

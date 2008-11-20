@@ -102,5 +102,10 @@ module CI
     def put content_type, data
       MediaFileServer.put url(), content_type, data
     end
+
+  protected
+    def parameters
+      @parameters.clone
+    end
   end
 end
