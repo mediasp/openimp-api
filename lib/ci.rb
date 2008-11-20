@@ -82,9 +82,9 @@ module CI
 
     def post url, properties
       json_query(url, properties) { |url, p|
-puts "actual url   : > #{url}"
-puts "actual query : > #{p.to_query}"
-        Net::HTTP::Post.new(url, p.to_query)
+        request = Net::HTTP::Post.new(url)
+        request.set_form_data p
+        request
         }
     end
 
@@ -106,6 +106,8 @@ puts "actual query : > #{p.to_query}"
   private
     # The API uses a custom JSON format for encoding class data. A +json_query+ automatically takes
     # care of the necessary translation to return a response object of the correct class.
+    #
+    # TODO: Improve error handling to be useful.
     def json_query url, attributes = {}, payload = nil, &block
       # Preprocess data before sending it to the server
       a = attributes.inject({}) do |h, (k, v)|

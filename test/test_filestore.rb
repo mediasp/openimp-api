@@ -58,41 +58,4 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal file.content, token.file.content
     assert_equal file.content, open(token.url) {|r| r.read }
   end
-
-  def test_cast_to_image
-    test_image = CI::File.disk_file(TEST_IMAGE_FILE, 'image/jpeg')
-    test_image.store!
-    image = test_image.become_sub_type
-    assert_instance_of CI::File::Image, image
-    assert_not_nil image.height
-    assert_not_nil image.width
-  end
-  
-=begin
-  def test_image_resize
-    test_image = CI::File::Image.disk_file(TEST_IMAGE_FILE, 'image/jpeg')
-    assert_instance_of CI::File::Image, test_image
-    height = 600
-    width = 800
-    resized = test_image.resize(width, height)
-    assert_instance_of CI::File::Image, resized
-    assert_equal height, resized.height
-    assert_equal width, resized.width
-  end
-
-  def test_image_resize_with_token
-    test_image = CI::File::Image.disk_file(TEST_IMAGE_FILE, 'image/jpeg')
-    assert_instance_of CI::File::Image, test_image
-    height = 600
-    width = 800
-    max_download_attempts = 5
-    max_download_successes = 2
-    token = test_image.resize(width, height, nil, nil, {:max_download_attempts => max_download_attempts, :max_download_successes => max_download_successes})
-    assert_instance_of CI::FileToken, token
-    assert_equal height, token.file.height
-    assert_equal width, token.file.width
-    assert_equal max_download_successes, token.max_download_successes
-    assert_equal max_download_attempts, token.max_download_attempts
-  end
-=end
 end

@@ -95,8 +95,8 @@ module CI
       METHOD
     end
 
-    def post properties
-      MediaFileServer.post url(), properties
+    def post properties, action = nil
+      MediaFileServer.post url(action), properties
     end
 
     def put content_type, data

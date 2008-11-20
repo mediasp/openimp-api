@@ -55,23 +55,6 @@ module CI
       FileToken.create self, :Unlimited => unlimited, :MaxDownloadAttempts => attempts, :MaxDownloadSuccesses => successes
     end
 
-    def become_sub_type
-      case mime_major
-      when 'image'
-        case mime_minor
-        when 'jpeg', 'gif', 'tiff', 'png'
-          post :NewType => 'API::File::Image'
-        end
-      when 'audio'
-        case mime_minor
-        when 'mp3', 'wav', 'flac', 'wma'
-          post :NewType => 'API::File::Audio'
-        end
-      else
-        raise "Cannot use file as #{MimeMajor}/#{MimeMinor}"
-      end
-    end
-
     def change_meta_data
       post :MimeMajor => mime_major, :MimeMinor => mime_minor
     end
@@ -91,8 +74,9 @@ module CI
     RESIZE_METHODS = [ 'NOMODIFIER', 'EXACT', 'SQUARE', 'SMALLER', 'LARGER' ]
     RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif' }
 
-    def resize width, height, constraint = :nomodifier, type = nil, synchronous = nil, token_properties = {}
-      post url('resize'), properties
+    def resize width, height, properties = {}, token_properties = nil
+      image = MediaFileServer.post url('resize'), properties.merge(:targetX => width, :targetY => height)
+      token_properties ? FileToken.create(image, token_properties) : image
     end
   end
 end
