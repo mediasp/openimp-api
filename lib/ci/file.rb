@@ -11,30 +11,12 @@
 module CI
   class File < Asset
     api_attr_accessor :MimeMajor, :MimeMinor
-    api_attr_reader   :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
+    api_attr_accessor :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
+    attr_writer       :content
     self.base_url = "filestore"
 
-
-    def self.new_from_file(file, mime_type)
-      new({:mime_type => mime_type}, ::File.read(file))
-    end
-    
-    def initialize parameters = {}, data = ""
-      super parameters
-      @dirty = data && data.length > 0
-      self.mime_type = parameters[:mime_type] if parameters[:mime_type]
-      @content = data
-    end
-
-    def content
-      @content
-    end
-
-    def content= new_content
-      unless new_content == content
-        @dirty = true
-        @content = new_content
-      end
+    def self.disk_file(name, mime_type)
+      new :mime_type => mime_type, @content => ::File.read(name)
     end
 
     def mime_type
@@ -45,42 +27,43 @@ module CI
       self.mime_major, self.mime_minor = *specifier.split("/")
     end
 
-    # Retrieve the data content associated with this file
-    def retrieve_content
-      @content = get_octet_stream
-      @dirty = false
+    def content
+      @content ||= retrieve_content
     end
 
-    # Performs an +API::File::Request::Store+ operation on the server.
+    # Retrieve the data content associated with this file
+    def retrieve_content
+      @content = get_octet_stream('retrieve')
+    end
+
+    # Performs an +API::File::Request::Store+ operation on the server, creating a new file.
     def store
-      file = add_contents
+      put mime_type, content
+    end
+
+    def store!
+      file = store
       file.become_sub_type rescue file
+      @parameters[:Id] = file.id
+      __representation__ = file.__representation__
+      sha1_digest_base64 = file.sha1_digest_base64
+      stored = file.stored
+      self
     end
     
     def create_file_token unlimited = false, attempts = 2, successes = 2
-      FileToken.create self, {  :Unlimited => unlimited,
-                                :MaxDownloadAttempts => attempts,
-                                :MaxDownloadSuccesses => successes }
-    end
-
-    # Add contents to the file on the server, returning a new file object when necessary
-    def add_contents
-      if @dirty then
-        response = put(mime_type, content)
-        @dirty = false
-      end
-      response || self
+      FileToken.create self, :Unlimited => unlimited, :MaxDownloadAttempts => attempts, :MaxDownloadSuccesses => successes
     end
 
     def become_sub_type
-      case MimeMajor
+      case mime_major
       when 'image'
-        case MimeMinor
+        case mime_minor
         when 'jpeg', 'gif', 'tiff', 'png'
           post :NewType => 'API::File::Image'
         end
       when 'audio'
-        case MimeMinor
+        case mime_minor
         when 'mp3', 'wav', 'flac', 'wma'
           post :NewType => 'API::File::Audio'
         end
@@ -99,11 +82,11 @@ module CI
   end
 
   class File::Audio < File
-    api_attr_reader :Tracks, :BitRate, :encoding
+    api_attr_accessor :Tracks, :BitRate, :encoding
   end
 
   class File::Image < File
-    api_attr_reader :width, :height
+    api_attr_accessor :width, :height
 
     RESIZE_METHODS = [ 'NOMODIFIER', 'EXACT', 'SQUARE', 'SMALLER', 'LARGER' ]
     RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif' }

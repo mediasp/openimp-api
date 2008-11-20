@@ -11,7 +11,7 @@ module TestCommon
     attr_reader :host, :port, :protocol
     attr_accessor :username, :password
   end
-  @username = nil
+  @username = 'playlouderapitest@ci-support.com'
   @password = nil
   @host = 'api.stage'
   @port = 80

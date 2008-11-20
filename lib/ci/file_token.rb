@@ -17,26 +17,36 @@
 
 module CI
   class FileToken < Asset
-    api_attr_reader   :URL, :PlayURL, :Unlimited, :RedirectWhenExpiredUrl
-    api_attr_reader   :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
-    api_attr_reader   :Valid
-    api_attr_boolean  :Valid, :Unlimited
-    has_one           :file
+    api_attr_accessor :URL, :PlayURL, :RedirectWhenExpiredUrl
+    api_attr_accessor :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
+    api_attr_accessor :file
     self.base_url = "filetoken"
 
     # The CI API exposes a FileToken creation via several different URLs. However we will never want to create
     # a file token that we do not already have a file to hand, and hence we only use the FileStore URL.
     def self.create file, properties = {}
-      post File.url(file.id, 'createfiletoken'), properties
+      MediaFileServer.post file.url('createfiletoken'), properties
     end
 
     # As an alternative a FileToken object can be created and the appropriate values set, then the save method
     # called which creates the token on the server and its details loaded.
-    def save!
+    def save
       FileToken.create file, {  :RedirectWhenExpiredUrl => redirect_when_expired_url,
                                 :Unlimited => unlimited,
                                 :MaxDownloadAttempts => max_download_attempts,
                                 :MaxDownloadSuccesses => max_download_successes   }
+    end
+
+    [:Unlimited, :Valid].each do |m|
+      class_eval <<-METHODS
+        def #{m.to_method_name}
+          @parameters[#{m}]
+        end
+
+        def #{m.to_method_name}= status
+          @parameters[#{m}] = [1, true].include?(status)
+        end
+      METHODS
     end
   end
 end

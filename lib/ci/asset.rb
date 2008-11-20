@@ -13,12 +13,8 @@ module CI
       end
     end
     class_inheritable_accessor  :base_url, :api_class_name
-    class_inheritable_accessor  :attributes, :boolean_attributes
     self.base_url = ""
-    self.attributes = SymmetricTranslationTable.new(:api, :ruby)
-    self.boolean_attributes = []
 
-  private
     def self.url id, *actions
       MediaFileServer.resolve self.base_url, id, actions.join("/")
     end
@@ -27,46 +23,34 @@ module CI
       self.class.url id, action
     end
 
-  public
-    def self.api_attr api_method, writeable = false #:nodoc:
-      ruby_method = api_method.to_method_name
-      MediaFileServer::API_ATTRIBUTES.define_api_term api_method, ruby_method
-      define_method ruby_method, lambda { @parameters[api_method] }
-      define_method "#{ruby_method}=", lambda { |v|
-        @parameters[api_method] = (MediaFileServer::BOOLEAN_ATTRIBUTES.include?(api_method) ? (v == 1) : v)
-      } if writeable
-    end
-
-    def self.api_attr_reader *api_methods #:nodoc:
-      Array.new(api_methods).each { |attribute| api_attr attribute, false }
-    end
-
     def self.api_attr_accessor *api_methods #:nodoc:
-      Array.new(api_methods).each { |attribute| api_attr attribute, true }
-    end
-
-    def self.api_attr_boolean *api_methods
-      Array.new(api_methods).each { |attribute| MediaFileServer::BOOLEAN_ATTRIBUTES << attribute }
+      Array.new(api_methods).each do |api_attribute|
+        ruby_method = api_attribute.to_method_name
+        api_key = api_attribute.to_sym
+        define_method ruby_method, lambda { @parameters[api_key] }
+        define_method "#{ruby_method}=", lambda { |v| @parameters[api_key] = v }
+      end
     end
 
     def self.has_many api_attribute
       ruby_method = api_attribute.to_method_name
+      api_key = api_attribute.to_sym
       define_method ruby_method, lambda { @parameters[api_attribute] || [] }
       define_method "#{ruby_method}=", lambda { |hashes|
-        @parameters[api_attribute] = hashes.map { |hash| Asset.create hash[:__CLASS__] }
+        @parameters[api_key] = hashes.map { |hash| Asset.create hash[:__CLASS__] }
         }
     end
 
-    def self.has_one api_attribute, options = {}
-      ruby_method = api_attribute.to_method_name
-      define_method "#{ruby_method}=", lambda { |hash| @parameters[api_attribute] = Asset.create(hash[:__CLASS__]) }
-    end
-
-    # Create an instance of this class from a 
-    def self.json_create o
-      asset = allocate
-      o.each { |k, v| asset.instance_variable_set "@#{k}", v unless k == '__CLASS__' }
-      asset
+    # We use a custom constructor to automatically load the correct object from the
+    # CI MFS system if the parameters to +new+ include an +id+.
+    def self.new parameters={}, *args
+      if api_id = (parameters[:Id] || parameters[:id]) then
+        load api_id
+      else
+        asset = allocate
+        asset.send :initialize, parameters, *args
+        asset
+      end
     end
 
     # Find a resource by its API id and instantiate an appropriate class.
@@ -74,23 +58,18 @@ module CI
       MediaFileServer.get(url(id))
     end
 
-    # We use a custom constructor to automatically load the correct object from the
-    # CI MFS system if the parameters to +new+ include an +id+.
-    def self.new parameters={}, *args
-      unless parameters.has_key?('id') then
-        asset = allocate
-        asset.send :initialize, *([parameters] + args)
-        asset
-      else
-        load id
-      end
+    # Create an instance of this class from a 
+    def self.json_create properties
+      asset = allocate
+      asset.send :initialize, properties
+      asset
     end
 
-    api_attr_reader     :Id, :__REPRESENTATION__
+    api_attr_accessor :Id, :__REPRESENTATION__
 
     def initialize parameters = {}
       @parameters = {}
-      parameters.each { |k, v| self.send("#{k}=", v) rescue nil }
+      parameters.delete_if { |k, v| k == '__CLASS__' }.each { |k, v| self.send("#{k.to_method_name}=", v) rescue nil }
     end
 
     # Reload the current asset
@@ -99,7 +78,7 @@ module CI
     end
 
     def to_json *a
-      self.parameters.inject({'__CLASS__' => self.class.name.sub(/CI/i, 'API')}) { |h, (k, v)|
+      self.parameters.inject({'__CLASS__' => self.class.name.sub(/CI::/i, 'API::')}) { |h, (k, v)|
         h[k] = case v
         when true then 1
         when false then 0
@@ -110,8 +89,8 @@ module CI
 
     [:get, :get_octet_stream, :head, :delete].each do |m|
       class_eval <<-METHOD
-        def #{m}
-          MediaFileServer.#{m} url()
+        def #{m} action = nil
+          MediaFileServer.#{m} url(action)
         end
       METHOD
     end
