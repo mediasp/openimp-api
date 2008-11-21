@@ -124,6 +124,11 @@ module CI
     end
 
   protected
+    def replace_with! asset
+      @parameters = asset.parameters
+      self
+    end
+
     def parameters
       @parameters.clone
     end

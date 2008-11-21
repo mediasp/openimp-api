@@ -15,8 +15,8 @@ module CI
     attr_writer       :content
     self.base_url = "filestore"
 
-    def self.disk_file(name, mime_type)
-      new :mime_type => mime_type, @content => ::File.read(name)
+    def self.disk_file name, mime_type
+      new :mime_type => mime_type, :content => ::File.read(name)
     end
 
     def mime_type
@@ -42,9 +42,7 @@ module CI
     end
 
     def store!
-      file = store
-      @parameters = file.parameters
-      self
+      replace_with! store
     end
     
     def create_file_token unlimited = false, attempts = 2, successes = 2
@@ -52,11 +50,15 @@ module CI
     end
 
     def change_meta_data
-      post :MimeMajor => mime_major, :MimeMinor => mime_minor
+      replace_with! post(:MimeMajor => mime_major, :MimeMinor => mime_minor)
     end
 
-    def enumerate_contextual_methods
-      get url(file.id, 'contextualmethod')
+    def contextual_methods
+      @contextual_methods ||= get('contextualmethod')
+    end
+
+    def sub_type mime_type
+      post({ :NewType => "API::File::#{/\//.match(mime_type).pre_match.capitalize}" }, 'becomesubtype')
     end
   end
 
@@ -74,5 +76,8 @@ module CI
       image = MediaFileServer.post url('resize'), properties.merge(:targetX => width, :targetY => height)
       token_properties ? FileToken.create(image, token_properties) : image
     end
+  end
+
+  class File::Video < File
   end
 end

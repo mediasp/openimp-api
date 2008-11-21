@@ -16,4 +16,7 @@ module CI
     references        :imagefrontcover
     self.base_url = "release/upc"
   end
+
+  # The API exposes two methpds for Releases.
+  # FindByUPC is nothing more than a load using the UPC code as the ID attribute
 end
