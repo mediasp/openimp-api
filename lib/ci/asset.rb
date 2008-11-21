@@ -19,26 +19,42 @@ module CI
       MediaFileServer.resolve self.base_url, id, actions.join("/")
     end
 
-    def url action = nil
-      self.class.url id, action
+    def self.with_api_attribute api_attribute
+      ruby_method = api_attribute.to_method_name
+      api_key = api_attribute.to_sym
+      yield ruby_method, api_key
     end
 
     def self.api_attr_accessor *api_methods #:nodoc:
       Array.new(api_methods).each do |api_attribute|
-        ruby_method = api_attribute.to_method_name
-        api_key = api_attribute.to_sym
-        define_method ruby_method, lambda { @parameters[api_key] }
-        define_method "#{ruby_method}=", lambda { |v| @parameters[api_key] = v }
+        with_api_attribute(api_attribute) do |ruby_method, api_key|
+          define_method(ruby_method) do
+            @parameters[api_key]
+          end
+          define_method("#{ruby_method}=") do
+            |v| @parameters[api_key] = v
+          end
+        end
       end
     end
 
     def self.has_many api_attribute
-      ruby_method = api_attribute.to_method_name
-      api_key = api_attribute.to_sym
-      define_method ruby_method, lambda { @parameters[api_attribute] || [] }
-      define_method "#{ruby_method}=", lambda { |hashes|
-        @parameters[api_key] = hashes.map { |hash| Asset.create hash[:__CLASS__] }
-        }
+      with_api_attribute(api_attribute) do |ruby_method, api_key|
+        define_method(ruby_method) do
+          @parameters[api_attribute] || []
+        end
+        define_method("#{ruby_method}=") do |hashes|
+          @parameters[api_key] = hashes.map { |hash| Asset.create hash[:__CLASS__] }
+        end
+      end
+    end
+
+    def self.references api_attribute
+      with_api_attribute(api_attribute) do |ruby_method, api_key|
+        define_method(ruby_method) do
+           @parameters[api_key].respond_to?(:__representation__) ? @parameters[api_key] : (@parameters[api_key] = Asset.load(@parameters[api_key]["__REPRESENTATION__"], :representation => true))
+        end
+      end
     end
 
     # We use a custom constructor to automatically load the correct object from the
@@ -53,9 +69,9 @@ module CI
       end
     end
 
-    # Find a resource by its API id and instantiate an appropriate class.
-    def self.load id
-      MediaFileServer.get(url(id))
+    # Find a resource by its API id or representation url and instantiate an appropriate class.
+    def self.load id, options = {}
+      MediaFileServer.get(options[:representation] ? id : url(id))
     end
 
     # Create an instance of this class from a 
@@ -70,6 +86,10 @@ module CI
     def initialize parameters = {}
       @parameters = {}
       parameters.delete_if { |k, v| k == '__CLASS__' }.each { |k, v| self.send("#{k.to_method_name}=", v) rescue nil }
+    end
+
+    def url action = nil
+      self.class.url id, action
     end
 
     # Reload the current asset

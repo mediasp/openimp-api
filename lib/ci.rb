@@ -41,7 +41,7 @@ module CI
     end
 
     def resolve asset, id = nil, action = nil
-      path = "/#{VERSION}/#{asset}"
+      path = asset.match(/^\/#{VERSION}\//) ? asset : "/#{VERSION}/#{asset}"
       if id then
         path += "/#{id}"
         if action then
@@ -51,8 +51,8 @@ module CI
       return path
     end
 
-    def get url
-      json_query(url) { |url, p| Net::HTTP::Get.new(url) }
+    def get url, options = {}
+      json_query(url) { |url, p| Net::HTTP::Get.new(resolve(url)) }
     end
 
     def get_octet_stream url

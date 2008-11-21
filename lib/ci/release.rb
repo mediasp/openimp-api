@@ -8,9 +8,12 @@ module CI
     api_attr_accessor :PLineYear, :PLineText, :CLineYear, :CLineText
     api_attr_accessor :tracks, :TrackCount
     has_many          :tracks
-
-    def artists
-      @params[:artists] || []
-    end
+    has_many          :Artists
+    has_many          :FeaturedArtists
+    has_many          :DisplayArtists
+    has_many          :Genres
+    has_many          :SubGenres
+    references        :imagefrontcover
+    self.base_url = "release/upc"
   end
 end

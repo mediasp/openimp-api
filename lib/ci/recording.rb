@@ -9,7 +9,7 @@ module CI
     alias_method :id, :isrc
     self.base_url = "recording/isrc"
 
-    def initialize
+    def initialize parameters = {}
       super
       @files = []
       @tracks = []
