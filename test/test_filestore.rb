@@ -56,7 +56,7 @@ class TestFilestore < Test::Unit::TestCase
   end  
 
   def test_find_file
-    file = CI::File.new(:id => @text_id)
+    file = CI::File.new(:Id => @text_id)
     assert_instance_of CI::File, file
     assert_not_nil file.sha1_digest_base64
     assert_not_nil file.mime_minor
@@ -67,7 +67,7 @@ class TestFilestore < Test::Unit::TestCase
   end
 
   def test_get_token
-    file = CI::File.new(:id => @text_id)
+    file = CI::File.new(:Id => @text_id)
     token = CI::FileToken.create(file)
     assert_instance_of CI::FileToken, token
     assert_not_nil token.url
@@ -77,7 +77,7 @@ class TestFilestore < Test::Unit::TestCase
   end
 
   def test_file_deletion
-    file = CI::File.new(:id => @text_id)
+    file = CI::File.new(:Id => @text_id)
     assert_instance_of CI::File, file
     placeholder = file.delete
     assert_instance_of CI::File, placeholder
@@ -85,7 +85,7 @@ class TestFilestore < Test::Unit::TestCase
   end
 
   def test_image_file_handling
-    file = CI::File.new(:id => @image_id)
+    file = CI::File.new(:Id => @image_id)
     assert_instance_of CI::File, file
     file = file.sub_type("image/jpeg")
     assert_instance_of CI::File::Image, file

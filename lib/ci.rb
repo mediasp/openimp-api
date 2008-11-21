@@ -8,7 +8,7 @@ require 'uri'
 require 'net/http'
 require 'net/https'
 require 'rexml/document'
-require 'activesupport'
+#require 'activesupport'
 require 'core_extensions.rb'
 require 'singleton'
 
@@ -18,6 +18,7 @@ require 'singleton'
 #More details about all the properties of each Class of object are available at https://mfs.ci-support.com/v1/docs
 
 module CI
+  # The +MediaFileServer+ uses a _singleton_ to wrap all access to the CI server into a single instance.
   class MediaFileServer
     include Singleton
 
