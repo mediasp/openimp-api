@@ -84,7 +84,7 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal "DELETED", placeholder.stored
   end
 
-  def test_enumerate_contextual_methods
+  def test_image_file_handling
     file = CI::File.new(:id => @image_id)
     assert_instance_of CI::File, file
     file = file.sub_type("image/jpeg")
@@ -94,5 +94,11 @@ class TestFilestore < Test::Unit::TestCase
     contextual_methods.each do |method|
       assert_instance_of CI::ContextualMethod, method
     end
+    digest = file.sha1_digest_base64
+    height, width = file.height, file.width
+    file.resize! 200, 300, :EXACT, { :targetType => 'jpg' }
+    assert_equal 200, file.width.to_i
+    assert_equal 300, file.height.to_i
+    assert_not_equal digest, file.sha1_digest_base64
   end
 end

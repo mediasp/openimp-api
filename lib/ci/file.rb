@@ -60,6 +60,12 @@ module CI
     def sub_type mime_type
       post({ :NewType => "API::File::#{/\//.match(mime_type).pre_match.capitalize}" }, 'becomesubtype')
     end
+
+  protected
+    def replace_with! file
+      @content = nil
+      super
+    end
   end
 
   class File::Audio < File
@@ -72,9 +78,12 @@ module CI
     RESIZE_METHODS = [ 'NOMODIFIER', 'EXACT', 'SQUARE', 'SMALLER', 'LARGER' ]
     RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif' }
 
-    def resize width, height, properties = {}, token_properties = nil
-      image = MediaFileServer.post url('resize'), properties.merge(:targetX => width, :targetY => height)
-      token_properties ? FileToken.create(image, token_properties) : image
+    def resize width, height, mode = :NOMODIFIER, properties = {}
+      MediaFileServer.post(url('contextualmethod/Resize'), properties.merge(:targetX => width, :targetY => height, :resizeType => "IMAGE_RESIZE_#{mode}", :Synchronous => 1))
+    end
+
+    def resize! width, height, mode = :NOMODIFIER, properties = {}
+      replace_with! resize(width, height, mode, properties)
     end
   end
 

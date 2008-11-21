@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/test_common.rb'
 class TestMusic < Test::Unit::TestCase
   include TestCommon
-
+=begin
   def test_list_encodings
     assert_nil CI::Encoding.encodings
     CI::Encoding.synchronize
@@ -22,4 +22,5 @@ class TestMusic < Test::Unit::TestCase
     front_cover = release.imagefrontcover
     assert_instance_of CI::File::Image, front_cover
   end
+=end
 end
