@@ -14,6 +14,8 @@ class TestMusic < Test::Unit::TestCase
   def test_get_release
     release = CI::Release.new(:id => TEST_UPC)
     assert_instance_of CI::Release, release
+    tracks = release.tracks
+    assert_instance_of Array, tracks
   end
 
   def test_get_front_cover_for_release

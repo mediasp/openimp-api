@@ -1,10 +1,9 @@
 module CI
   # A +FileToken+ is used to control access to a file stored on the server.
   class FileToken < Asset
-    api_attr_accessor :URL, :PlayURL, :RedirectWhenExpiredUrl
-    api_attr_accessor :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
-    api_attr_accessor :file
-    self.base_url = "filetoken"
+    base_url      :filetoken
+    attributes    :URL, :PlayURL, :RedirectWhenExpiredUrl, :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
+    attributes    :file
 
     # The CI API exposes a FileToken creation via several different URLs. However we will never want to create
     # a file token that we do not already have a file to hand, and hence we only use the FileStore URL.
@@ -33,10 +32,9 @@ module CI
 
 
   class File < Asset
-    api_attr_accessor :MimeMajor, :MimeMinor
-    api_attr_accessor :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
-    attr_writer       :content
-    self.base_url = "filestore"
+    base_url      :filestore
+    attributes    :MimeMajor, :MimeMinor, :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
+    attr_writer   :content
 
     def self.disk_file name, mime_type
       new :mime_type => mime_type, :content => ::File.read(name)
@@ -93,12 +91,13 @@ module CI
 
 
   class File::Audio < File
-    api_attr_accessor :Tracks, :BitRate, :encoding
+    attributes    :BitRate, :encoding
+    collections   :tracks
   end
 
 
   class File::Image < File
-    api_attr_accessor :width, :height
+    attributes    :width, :height
 
     RESIZE_METHODS = [ 'NOMODIFIER', 'EXACT', 'SQUARE', 'SMALLER', 'LARGER' ]
     RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif' }

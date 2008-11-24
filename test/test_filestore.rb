@@ -89,6 +89,7 @@ class TestFilestore < Test::Unit::TestCase
     assert_instance_of CI::File, file
     file = file.sub_type("image/jpeg")
     assert_instance_of CI::File::Image, file
+
     contextual_methods = file.contextual_methods
     assert_instance_of Array, contextual_methods
     contextual_methods.each do |method|

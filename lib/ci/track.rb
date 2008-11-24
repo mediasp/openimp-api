@@ -1,11 +1,11 @@
 module CI
   class Track < Asset
-    api_attr_accessor :ReferenceTitle, :SubTitle, :DisplayArtist, :ParentalWarningType
-    api_attr_accessor :Genres, :SubGenres
-    api_attr_accessor :PLineYear, :PLineText, :CLineYear, :CLineText
-    api_attr_accessor :SequenceNumber, :VolumeNumber, :TrackNumber
-    api_attr_accessor :files, :recording, :release
-    has_many          :files
+    attributes    :ReferenceTitle, :SubTitle, :DisplayArtist, :ParentalWarningType
+    attributes    :PLineYear, :PLineText, :CLineYear, :CLineText
+    attributes    :SequenceNumber, :VolumeNumber, :TrackNumber
+    attributes    :recording
+    collections   :files, :Genres, :SubGenres
+    references    :release
     #TODO getter and setter for files array, recording, release
     #TODO better way of doing inter-class associations.
 

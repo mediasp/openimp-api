@@ -31,3 +31,15 @@ class Symbol
     self.to_s.to_method_name
   end
 end
+
+module Kernel
+  def with_aliased_namespace original, synonym, &block
+    s = synonym.to_s.to_sym
+    Object.send(:remove_const, s) if  old_binding = (Object.const_get(s) rescue nil)
+    Object.const_set(s, original)
+    result = yield
+    Object.send(:remove_const, s)
+    Object.const_set(s, old_binding) if old_binding
+    result
+  end
+end

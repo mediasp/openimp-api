@@ -42,7 +42,7 @@ module CI
     end
 
     def resolve asset, id = nil, action = nil
-      path = asset.match(/^\/#{VERSION}\//) ? asset : "/#{VERSION}/#{asset}"
+      path = (asset.to_s rescue "").match(/^\/#{VERSION}\//) ? asset : "/#{VERSION}/#{asset}"
       if id then
         path += "/#{id}"
         if action then
@@ -123,7 +123,9 @@ module CI
         when Net::HTTPClientError, Net::HTTPServerError
           raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
         else
-          alias_namespace(CI, :API) do
+          # The API namespace is used by CI's server-side code but this is a fragile choice so we use CI locally
+          # and perform some behind-the-scenes magic to make it look elegant
+          with_aliased_namespace(CI, :API) do
             JSON.instance_variable_set "@create_id", '__CLASS__'
             result = JSON.parse(response.body)
             JSON.instance_variable_set "@create_id", 'json_class'
@@ -132,23 +134,12 @@ module CI
         end
       end
     end
-
-    # The API namespace is used by CI's server-side code but this is a fragile choice so we use CI locally
-    # and perform some behind-the-scenes magic to make it look elegant
-    def alias_namespace original, synonym, &block
-      s = synonym.to_s.to_sym
-      old_binding = Object.const_get(s) rescue nil
-      Object.const_set(s, original)
-      result = yield
-      old_binding ? Object.const_set(s, old_binding) : Object.send(:remove_const, s)
-      result
-    end
   end
 end
 
 def load_files(dir) #:nodoc:
   Dir.new(dir).each do |f|
-    if f =~ /\.rb$/
+    if f =~ /\.rb$/ then
       require "#{dir}/#{f}"
       folder = "#{dir}/#{f.sub(/\.rb$/, '/')}"
       load_files(folder) if File.exists?(folder) 

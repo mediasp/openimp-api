@@ -1,13 +1,9 @@
 module CI
   class Recording < Asset
-    api_attr_accessor :tracks, :files, :ISRC, :Duration
-    api_attr_accessor :LabelName, :Producers, :Mixers
-    api_attr_accessor :Composers, :Lyricists
-    api_attr_accessor :MainArtist, :FeaturedArtists, :Artists
-    has_many          :tracks
-    has_many          :files
-    alias_method :id, :isrc
-    self.base_url = "recording/isrc"
+    primary_key   :ISRC
+    base_url      :"recording/isrc"
+    attributes    :Duration, :LabelName, :MainArtist
+    collections   :Producers, :Mixers, :Composers, :Lyricists, :FeaturedArtists, :Artists, :tracks, :files
 
     def initialize parameters = {}
       super
