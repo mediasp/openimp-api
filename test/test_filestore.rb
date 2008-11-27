@@ -2,7 +2,6 @@ require File.dirname(__FILE__) + '/test_common.rb'
 
 class TestFilestore < Test::Unit::TestCase
   include TestCommon
-
   def setup
     super
     store_text_file

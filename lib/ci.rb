@@ -38,7 +38,7 @@ module CI
       @password = password
       @protocol = options[:protocol] || :https
       @host = options[:host] || 'mfs.ci-support.com'
-      @port = options[:port] || 443
+      @port = options[:port] || 44
     end
 
     def resolve asset, id = nil, action = nil
@@ -77,13 +77,22 @@ module CI
     end
 
     def head url
-      json_query(url) { |url, p| Net::HTTP::Head.new(url) }
+      json_query(url) { |url, p| @request = Net::HTTP::Head.new(url) }
     end
 
-    def post url, properties
-      json_query(url, properties) { |url, p|
+    def post url, values, headers = {}
+      json_query(url, values) { |url, v|
         request = Net::HTTP::Post.new(url)
-        request.set_form_data p
+        request.set_form_data v
+        headers.each { |header, setting| request[header] = setting }
+        request
+        }
+    end
+
+    def multipart_post url, sub_type = "form-data"
+      json_query(url) { |url, p|
+        request = Net::HTTP::Post.new(url)
+        request.multipart sub_type, Array.new(yield(url))
         request
         }
     end
@@ -123,9 +132,10 @@ module CI
         when Net::HTTPClientError, Net::HTTPServerError
           raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
         else
-          # The API namespace is used by CI's server-side code but this is a fragile choice so we use CI locally
-          # and perform some behind-the-scenes magic to make it look elegant
-          with_aliased_namespace(CI, :API) do
+          # The MFS namespace is used by CI's server-side code but we use CI locally and perform some behind-the-scenes magic
+          # to make it look elegant. This is a legacy of the API namespace previously used, but as it makes the namespace
+          # conversion more explicit we'll keep it for the time being.
+          with_aliased_namespace(CI, :MFS) do
             JSON.instance_variable_set "@create_id", '__CLASS__'
             result = JSON.parse(response.body)
             JSON.instance_variable_set "@create_id", 'json_class'

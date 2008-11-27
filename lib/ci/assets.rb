@@ -3,15 +3,14 @@ module CI
     def self.json_create properties
       raise new(properties["errormessage"])
     end
-  end
 
-  [:PermissionDenied, :NotImplemented, :Conflict, :BadParameters, :NotFound].each do |error|
-    class_eval <<-CLASS
-      class #{error} < Error
-      end
-    CLASS
+    [:PermissionDenied, :NotImplemented, :Conflict, :BadParameters, :NotFound].each do |error|
+      class_eval <<-CLASS
+        class #{error} < Error
+        end
+      CLASS
+    end
   end
-
 
   # The +Asset+ class defines the core features of server-side objects, including the ability to autoinstantiate them
   # from _JSON_ for transport across the network.
@@ -40,19 +39,19 @@ module CI
       @api_base_url = url
     end
 
-    # A +meta programming helper method+ which converts an API attribute into more manageable forms.
+    # A +meta programming helper method+ which converts an MFS attribute into more manageable forms.
     def self.with_api_attributes *attributes
       Array.new(attributes).each do |api_attribute|
         yield api_attribute.to_method_name, api_attribute.to_sym
       end
     end
 
-    # Not all API classes use +Id+ as their primary key, therefore we allow the primary key to be explicitly
+    # Not all MFS classes use +Id+ as their primary key, therefore we allow the primary key to be explicitly
     # named whilst still keeping the notion of an id
     def self.primary_key attribute
       with_api_attributes(attribute) do |ruby_method, api_key|
         define_method(:primary_key) { api_key }
-        [:id, attribute].each do |accessor|
+        [:id, ruby_method].each do |accessor|
           define_method(accessor) { @parameters[api_key] }
           define_method("#{accessor}=") do |value|
             @parameters[api_key] = value
@@ -61,17 +60,21 @@ module CI
       end
     end
 
-    # Defines an API attribute present on the current class and creates accessor methods for manupulating it.
+    # Defines an MFS attribute present on the current class and creates accessor methods for manupulating it.
     def self.attributes *attributes #:nodoc:
       with_api_attributes(*attributes) do |ruby_method, api_key|
-        define_method(ruby_method) { @parameters[api_key] }
+        define_method(ruby_method) {
+          # For attributes which expose only a representation we support lazy loading
+          @parameters[api_key] = Asset.new(@parameters[api_key]) if @parameters[api_key]["__REPRESENTATION__"] rescue false
+          @parameters[api_key]
+          }
         define_method("#{ruby_method}=") do |value|
           @parameters[api_key] = value
         end
       end
     end
 
-    # Defines an API attribute as representing a collection of one or more server-side objects and creates
+    # Defines an MFS attribute as representing a collection of one or more server-side objects and creates
     # accessor methods for manipulating it.
     def self.collections *attributes
       with_api_attributes(*attributes) do |ruby_method, api_key|
@@ -82,27 +85,15 @@ module CI
       end
     end
 
-    # Defines an API attribute as being a reference to another object stored on the server, represented by a URL.
-    def self.references *attributes
-      with_api_attributes(*attributes) do |ruby_method, api_key|
-        define_method(ruby_method) do
-          @parameters[api_key].respond_to?(:__representation__) ? @parameters[api_key] : (@parameters[api_key] = Asset.load(@parameters[api_key]["__REPRESENTATION__"], :representation => true))
-        end
-        define_method("#{ruby_method}=") do |value|
-          @parameters[api_key] = value
-        end
-      end
-    end
-
     # We use a custom constructor to automatically load the correct object from the
     # CI MFS system if the parameters to +new+ include a +primary key+.
     def self.new parameters={}, *args
       asset = allocate
       case
-      when parameters[asset.primary_key]
-        asset = MediaFileServer.get(url(parameters[asset.primary_key]))
-      when parameters['__REPRESENTATION__']
-        asset = MediaFileServer.get(parameters['__REPRESENTATION__'])
+      when id = parameters[asset.primary_key] || parameters[:id]
+        asset = MediaFileServer.get(url(id))
+      when representation = parameters['__REPRESENTATION__']
+        asset = MediaFileServer.get(representation)
       else
         asset.send :initialize, parameters, *args
       end
@@ -130,7 +121,7 @@ module CI
     end
 
     def to_json *a
-      self.parameters.inject({'__CLASS__' => self.class.name.sub(/CI::/i, 'API::')}) { |h, (k, v)|
+      self.parameters.inject({'__CLASS__' => self.class.name.sub(/CI::/i, 'MFS::')}) { |h, (k, v)|
         h[k] = case v
         when true then 1
         when false then 0
@@ -147,8 +138,12 @@ module CI
       METHOD
     end
 
-    def post properties, action = nil
-      MediaFileServer.post url(action), properties
+    def post properties, action = nil, headers = {}
+      MediaFileServer.post url(action), properties, headers
+    end
+
+    def multipart_post
+      MediaFileServer.multipart_post(url()) { |url| yield url }
     end
 
     def put content_type, data
@@ -171,29 +166,30 @@ module CI
   end
 
 
-  # An +Encoding+ describes the audio codec associated with a server-side audio file.
-  class Encoding < Asset
-    primary_key   :Name
-    base_url      :encoding
-    attributes    :Codec, :Family, :PreviewLength, :Channels, :Bitrate, :Description
-    @@encodings = nil
+  module Metadata
+    # An +Encoding+ describes the audio codec associated with a server-side audio file.
+    class Encoding < Asset
+      primary_key   :Name
+      base_url      :encoding
+      attributes    :Codec, :Family, :PreviewLength, :Channels, :Bitrate, :Description
+      @@encodings = nil
 
-    def self.synchronize
-      @@encodings = MediaFileServer.get(url nil)
-    end
+      def self.synchronize
+        @@encodings = MediaFileServer.get(url nil)
+      end
 
-    def self.encodings
-      @@encodings.dup rescue nil
-    end
+      def self.encodings
+        @@encodings.dup rescue nil
+      end
 =begin
-    # We use a custom constructor to automatically load the correct object from the
-    # CI MFS system if the parameters to +new+ include a +name+.
-    def self.new parameters={}, *args
-      super parameters.merge(:Id => parameters[:Name] || parameters[:name], :Name => nil, :name => nil), *args
-    end
+      # We use a custom constructor to automatically load the correct object from the
+      # CI MFS system if the parameters to +new+ include a +name+.
+      def self.new parameters={}, *args
+        super parameters.merge(:Id => parameters[:Name] || parameters[:name], :Name => nil, :name => nil), *args
+      end
 =end
+    end
   end
-
 
   # A +ContextualMethod+ is a method call avaiable on a server-side object.
   class ContextualMethod < Asset

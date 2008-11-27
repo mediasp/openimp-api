@@ -1,3 +1,5 @@
+require 'pathname'
+
 module CI
   # A +FileToken+ is used to control access to a file stored on the server.
   class FileToken < Asset
@@ -5,7 +7,7 @@ module CI
     attributes    :URL, :PlayURL, :RedirectWhenExpiredUrl, :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
     attributes    :file
 
-    # The CI API exposes a FileToken creation via several different URLs. However we will never want to create
+    # The MFS API exposes a FileToken creation via several different URLs. However we will never want to create
     # a file token that we do not already have a file to hand, and hence we only use the FileStore URL.
     def self.create file, properties = {}
       MediaFileServer.post file.url('createfiletoken'), properties
@@ -35,9 +37,10 @@ module CI
     base_url      :filestore
     attributes    :MimeMajor, :MimeMinor, :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
     attr_writer   :content
+    attr_reader   :file_name
 
     def self.disk_file name, mime_type
-      new :mime_type => mime_type, :content => ::File.read(name)
+      new(:mime_type => mime_type, :content => ::File.read(name), :file_name => name)
     end
 
     def mime_type
@@ -52,14 +55,23 @@ module CI
       @content ||= retrieve_content
     end
 
+    def file_name= name
+      @file_name = (Pathname.new(name.to_s) rescue name)
+    end
+
     # Retrieve the data content associated with this file
     def retrieve_content
       @content = get_octet_stream('retrieve')
     end
 
-    # Performs an +API::File::Request::Store+ operation on the server, creating a new file.
+    # Performs an +MFS::File::Request::Store+ operation on the server, creating a new file.
     def store
-      put mime_type, content
+      multipart_post do
+        [ "Content-Disposition: form-data; name=\"file\"; filename=\"#{file_name.basename rescue ""}\"\r\nContent-Type: #{mime_type}\r\n\r\n#{content}",
+          "Content-Disposition: form-data; name=\"MimeMajor\"\r\n\r\n#{mime_major}",
+          "Content-Disposition: form-data; name=\"MimeMinor\"\r\n\r\n#{mime_minor}"
+          ]
+      end
     end
 
     def store!
@@ -79,12 +91,14 @@ module CI
     end
 
     def sub_type mime_type
-      post({ :NewType => "API::File::#{/\//.match(mime_type).pre_match.capitalize}" }, 'becomesubtype')
+      post({ :NewType => "MFS::File::#{/\//.match(mime_type).pre_match.capitalize}" }, 'becomesubtype')
     end
 
   protected
     def replace_with! file
-      @content = nil
+      sleep 1 unless file.stored == "STORED"
+      @content = file.content
+      @file_name = file.file_name
       super
     end
   end
