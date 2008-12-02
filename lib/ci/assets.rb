@@ -77,8 +77,8 @@ module CI
     def self.collections *attributes
       with_api_attributes(*attributes) do |ruby_method, api_key|
         define_method(ruby_method) { @parameters[api_key] || [] }
-        define_method("#{ruby_method}=") do |hashes|
-          @parameters[api_key] = hashes.map { |hash| Asset.create hash[:__CLASS__] }
+        define_method("#{ruby_method}=") do |values|
+          @parameters[api_key] = values.map { |v| v.respond_to?(:has_key?) ? Asset.create(v) : v }
         end
       end
     end
