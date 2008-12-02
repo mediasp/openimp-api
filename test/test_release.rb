@@ -17,4 +17,14 @@ class TestRelease < Test::Unit::TestCase
     front_cover = release.imagefrontcover
     assert_instance_of CI::File::Image, front_cover
   end
+  
+  def test_release_list
+    list = CI::Metadata::Release.list
+    assert_instance_of CI::Pager, list
+    list.each do |page|
+      assert_instance_of Array, page
+      assert_instance_of CI::Metadata::Release, page.first
+      break # we only bother to test the first
+    end
+  end
 end

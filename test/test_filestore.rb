@@ -101,4 +101,14 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal 300, file.height.to_i
     assert_not_equal digest, file.sha1_digest_base64
   end
+  
+  def test_filestore_list
+    list = CI::File.list
+    assert_instance_of CI::Pager, list
+    list.each do |page|
+      assert_instance_of Array, page
+      assert_instance_of CI::File, page.first
+      break # we only bother to test the first
+    end
+  end
 end
