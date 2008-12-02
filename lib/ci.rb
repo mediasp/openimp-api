@@ -7,8 +7,6 @@ require 'json'
 require 'uri'
 require 'net/http'
 require 'net/https'
-require 'rexml/document'
-#require 'activesupport'
 require 'core_extensions.rb'
 require 'singleton'
 
