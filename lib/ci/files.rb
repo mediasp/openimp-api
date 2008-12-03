@@ -94,6 +94,10 @@ module CI
       post({ :NewType => "MFS::File::#{/\//.match(mime_type).pre_match.capitalize}" }, 'becomesubtype')
     end
 
+    def self.list
+      MediaFileServer.get "/filestore/list"
+    end
+
   protected
     def replace_with! file
       sleep 1 unless file.stored == "STORED"

@@ -15,6 +15,10 @@ module CI
       def newest_track
         get url('newest')
       end
+      
+      def self.list
+        MediaFileServer.get "/recording/list"
+      end
     end
 
     #TODO add methods to get encodings etc.

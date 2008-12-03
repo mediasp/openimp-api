@@ -10,6 +10,10 @@ module CI
       attributes    :PLineYear, :PLineText, :CLineYear, :CLineText, :imagefrontcover
       attributes    :TrackCount
       collections   :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres
+
+      def self.list
+        MediaFileServer.get "/release/list"
+      end
     end
 
     # The API exposes two methpds for Releases.
