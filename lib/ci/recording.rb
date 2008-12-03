@@ -8,16 +8,6 @@ module CI
 
       def initialize parameters = {}
         super
-        @files = []
-        @tracks = []
-      end
-
-      def newest_track
-        get url('newest')
-      end
-      
-      def self.list
-        MediaFileServer.get "/recording/list"
       end
     end
 

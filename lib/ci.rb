@@ -41,12 +41,8 @@ module CI
 
     def resolve asset, id = nil, action = nil
       path = (asset.to_s rescue "").match(/^\/#{VERSION}\//) ? asset : "/#{VERSION}/#{asset}"
-      if id then
-        path += "/#{id}"
-        if action then
-          path += "/#{action}"
-        end
-      end
+      path += "/#{id}" if id
+      path += "/#{action}" if action
       return path
     end
 

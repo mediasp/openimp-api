@@ -10,10 +10,6 @@ module CI
       attributes    :PLineYear, :PLineText, :CLineYear, :CLineText, :imagefrontcover
       attributes    :TrackCount
       collections   :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres
-
-      def self.list
-        MediaFileServer.get "/release/list"
-      end
       
       module ParentalWarning
         EXPLICIT                = 'Explicit'

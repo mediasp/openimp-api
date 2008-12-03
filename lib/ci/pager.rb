@@ -6,7 +6,7 @@ module CI
   class Pager
     class << self; alias :json_create :new; end
     
-    def initialize(json_data)
+    def initialize json_data
       @pages = json_data['Pages']
     end
     
@@ -16,7 +16,7 @@ module CI
       @pages.length.times {|n| yield self[n]}
     end
 
-    def [](n)
+    def [] n
       MediaFileServer.get(@pages[n])
     end
     alias :page :[]

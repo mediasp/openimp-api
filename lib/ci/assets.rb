@@ -16,7 +16,7 @@ module CI
   # from _JSON_ for transport across the network.
   class Asset
     # Simple implementation of a +class inheritable accessor+.
-    def self.class_inheritable_accessor(*args)
+    def self.class_inheritable_accessor *args
       args.each do |arg|
         class_eval <<-METHODS
           def self.#{arg}
@@ -35,6 +35,10 @@ module CI
     # Creates a canonical URL for the specified server-side object.
     def self.url id, *actions
       MediaFileServer.resolve self.api_base_url, id, actions.join("/")
+    end
+
+    def self.list
+      MediaFileServer.get self.url(nil, 'list')
     end
 
     def self.base_url url
@@ -162,8 +166,8 @@ module CI
       @parameters.clone
     end
   end
-  
-  
+
+
   module Metadata
     # An +Encoding+ describes the audio codec associated with a server-side audio file.
     class Encoding < Asset
@@ -179,13 +183,6 @@ module CI
       def self.encodings
         @@encodings.dup rescue nil
       end
-=begin
-      # We use a custom constructor to automatically load the correct object from the
-      # CI MFS system if the parameters to +new+ include a +name+.
-      def self.new parameters={}, *args
-        super parameters.merge(:Id => parameters[:Name] || parameters[:name], :Name => nil, :name => nil), *args
-      end
-=end
     end
   end
 
