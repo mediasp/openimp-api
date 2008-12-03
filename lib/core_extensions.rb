@@ -29,7 +29,7 @@ module Net
     class Post
       protected
       CRLF = "\r\n"
-      ALLOWED_DELIMITER_TOKENS = ["0".."9", "A".."Z", "a".."z"].inject("") { |s, r| s + r.to_a.join } + "'()+_,-./:=?"
+      ALLOWED_DELIMITER_TOKENS = ["0".."9", "A".."Z", "a".."z"].inject("") { |s, r| s + r.to_a.join } + "'()+_-./:=?" # "," RFC valid character but not supported by MFS parser
       RANDOM_RANGE = ALLOWED_DELIMITER_TOKENS.length
 
       def create_mime_delimiter length = 30
