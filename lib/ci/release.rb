@@ -14,6 +14,23 @@ module CI
       def self.list
         MediaFileServer.get "/release/list"
       end
+      
+      module ParentalWarning
+        EXPLICIT                = 'Explicit'
+        NO_ADVICE_AVAILABLE     = 'NoAdviceAvailable'
+        EXPLICIT_CONTENT_EDITED = 'ExplicitContentEdited'
+        NOT_EXPLICIT            = 'NotExplicit'
+      end
+      
+      # Returns true, false, or nil (don't know).
+      # So you can check explicitly for nil, or just treat as boolean and presume not explicit when not known.
+      def explicit?
+        case parental_warning_type
+        when ParentalWarning::EXPLICIT then true
+        when ParentalWarning::EXPLICIT_CONTENT_EDITED, ParentalWarning::NOT_EXPLICIT then false
+        else nil # we don't know
+        end
+      end
     end
 
     # The API exposes two methpds for Releases.
