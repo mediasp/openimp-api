@@ -22,11 +22,11 @@ module CI
     [:Unlimited, :Valid].each do |m|
       class_eval <<-METHODS
         def #{m.to_method_name}
-          @parameters[#{m}]
+          @parameters[:#{m}]
         end
 
         def #{m.to_method_name}= status
-          @parameters[#{m}] = [1, true].include?(status)
+          @parameters[:#{m}] = [1, true].include?(status)
         end
       METHODS
     end

@@ -114,7 +114,11 @@ module CI
 
     def initialize parameters = {}
       @parameters = {}
-      parameters.delete_if { |k, v| k == '__CLASS__' }.each { |k, v| self.send("#{k.to_method_name}=", v) rescue nil }
+      parameters.delete('__CLASS__')
+      parameters.each do |k, v|
+        setter = "#{k.to_method_name}="
+        send(setter, v) if respond_to?(setter)
+      end
     end
 
     # Calculate a URL relative to the current server object.
@@ -123,13 +127,16 @@ module CI
     end
 
     def to_json *a
-      self.parameters.inject({'__CLASS__' => self.class.name.sub(/CI::/i, 'MFS::')}) { |h, (k, v)|
-        h[k] = case v
+      result = {'__CLASS__' => self.class.name.sub(/CI::/i, 'MFS::')}
+      parameters.each do |k,v|
+        result[k] = case v
+        # the CI API needs 0/1 instead of the normal json true/false. apparently.
         when true then 1
         when false then 0
-        else v.to_json(*a)
+        else v
         end
-      }.to_json(*a)
+      end
+      result.to_json(*a)
     end
 
     [:get, :get_octet_stream, :head, :delete].each do |m|
