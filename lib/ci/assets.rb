@@ -15,6 +15,7 @@ module CI
   # The +Asset+ class defines the core features of server-side objects, including the ability to autoinstantiate them
   # from _JSON_ for transport across the network.
   class Asset
+    WILDCARD_ID = '*'.freeze
     # Simple implementation of a +class inheritable accessor+.
     def self.class_inheritable_accessor *args
       args.each do |arg|
@@ -30,19 +31,25 @@ module CI
       end
     end
  
-    class_inheritable_accessor  :api_base_url, :api_class_name
+    class_inheritable_accessor  :api_base_url, :api_item_url
 
     # Creates a canonical URL for the specified server-side object.
     def self.url id, *actions
-      MediaFileServer.resolve self.api_base_url, id, actions.join("/")
+      case id
+      when WILDCARD_ID
+        MediaFileServer.resolve self.api_base_url, actions.join("/")
+      else
+        MediaFileServer.resolve self.api_item_url, id, actions.join("/")
+      end
     end
 
     def self.list
-      MediaFileServer.get self.url(nil, 'list')
+      MediaFileServer.get url(WILDCARD_ID, 'list')
     end
 
-    def self.base_url url
+    def self.base_url url, item_key = nil
       @api_base_url = url
+      @api_item_url = [url, item_key].compact.join("/")
     end
 
     # A +meta programming helper method+ which converts an MFS attribute into more manageable forms.

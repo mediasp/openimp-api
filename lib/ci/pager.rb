@@ -4,12 +4,14 @@ module CI
   # should contain an array of result objects.
   # We wrap this behaviour here in a pretty simple fashion, exposing Enumerable and some Array methods.
   class Pager
-    class << self; alias :json_create :new; end
-    
+    class << self
+      alias :json_create :new
+    end
+
     def initialize json_data
       @pages = json_data['Pages']
     end
-    
+
     include Enumerable
 
     def each

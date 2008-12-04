@@ -3,21 +3,21 @@ module CI
     class Release < Asset
       #TODO code to convert ISO Durations and dates / times to ruby objects.
       primary_key   :UPC
-      base_url      :"release/upc"
+      base_url      :release, :upc
       attributes    :LabelName, :CatalogNumber, :ReleaseType, :ParentalWarningType, :PriceRangeType
       attributes    :ReferenceTitle, :SubTitle, :Duration
       attributes    :MainArtist, :DisplayArtist
       attributes    :PLineYear, :PLineText, :CLineYear, :CLineText, :imagefrontcover
       attributes    :TrackCount
       collections   :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres
-      
+
       module ParentalWarning
         EXPLICIT                = 'Explicit'
         NO_ADVICE_AVAILABLE     = 'NoAdviceAvailable'
         EXPLICIT_CONTENT_EDITED = 'ExplicitContentEdited'
         NOT_EXPLICIT            = 'NotExplicit'
       end
-      
+
       # Returns true, false, or nil (don't know).
       # So you can check explicitly for nil, or just treat as boolean and presume not explicit when not known.
       def explicit?
