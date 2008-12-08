@@ -23,9 +23,13 @@ module TestCommon
       TestCommon.username = gets.chomp
     end
     unless TestCommon.password
-      print "\nPassword: "
-      TestCommon.password = gets.chomp
-      print "\n"
+      file = File.dirname(__FILE__)+'/.password'
+      TestCommon.password = if File.exist?(file)
+        File.read(file)
+      else
+        print "\nPassword: "
+        gets.chomp
+      end
     end
     CI::MediaFileServer.configure(TestCommon.username, TestCommon.password, {:host => TestCommon.host, :protocol => TestCommon.protocol, :port => TestCommon.port})
   end
