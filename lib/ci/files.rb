@@ -96,7 +96,6 @@ module CI
 
   protected
     def replace_with! file
-      sleep 1 unless file.stored == "STORED"
       @content = file.content
       @file_name = file.file_name
       super
