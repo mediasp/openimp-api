@@ -64,6 +64,15 @@ module CI
     def self.primary_key attribute
       with_api_attributes(attribute) do |ruby_method, api_key|
         define_method(:primary_key) { api_key }
+        
+        # once a unique primary key is defined, it makes sense to have a notion of equality corresponding to the primary key.
+        # if two instances of the same asset class have a primary key defined, and equal, then we consider the two instances equal.
+        define_method(:==) do |other|
+          super || (other.instance_of?(self.class) && id && id == other.id)
+        end
+        define_method(:hash) {id.hash}
+        alias_method(:eql?, :==)
+
         [:id, ruby_method].each do |accessor|
           define_method(accessor) { @parameters[api_key] }
           define_method("#{accessor}=") { |value| @parameters[api_key] = value }
@@ -167,10 +176,6 @@ module CI
     end
 
   protected
-    def == asset
-      parameters == asset.parameters
-    end
-
     def replace_with! asset
       @parameters = asset.parameters
       self
