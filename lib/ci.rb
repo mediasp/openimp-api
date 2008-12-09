@@ -39,24 +39,21 @@ module CI
       @port = options[:port] || 44
     end
 
-    def resolve asset, id = nil, action = nil
-      path = (asset.to_s rescue "").match(/^\/#{VERSION}\//) ? asset : "/#{VERSION}/#{asset}"
-      path += "/#{id}" if id
-      path += "/#{action}" if action
-      return path
+    def path(path_components)
+      "/#{VERSION}/#{path_components.join('/')}"
     end
 
-    def get url, options = {}
-      json_query(url) { |url, p| Net::HTTP::Get.new(resolve(url)) }
+    def get(path_components, options={})
+      json_query(path(path_components)) { |url, p| Net::HTTP::Get.new(url) }
     end
 
-    def get_octet_stream url
+    def get_octet_stream(path_components)
       Net::HTTP.start(@host, @port) do |connection|
         if @protocol == :https then
           connection.use_ssl = true
           connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
-        request = Net::HTTP::Get.new(url)
+        request = Net::HTTP::Get.new(path(path_components))
         request['accept'] = 'application/json'
         request.basic_auth(@username, @password)
         case response = connection.request(request)
@@ -70,12 +67,12 @@ module CI
       end
     end
 
-    def head url
-      json_query(url) { |url, p| @request = Net::HTTP::Head.new(url) }
+    def head(path_components)
+      json_query(path(path_components)) { |url, p| @request = Net::HTTP::Head.new(url) }
     end
 
-    def post url, values, headers = {}
-      json_query(url, values) { |url, v|
+    def post(path_components, values, headers = {})
+      json_query(path(path_components), values) { |url, v|
         request = Net::HTTP::Post.new(url)
         request.set_form_data v
         headers.each { |header, setting| request[header] = setting }
@@ -83,27 +80,27 @@ module CI
         }
     end
 
-    def multipart_post url, sub_type = "form-data"
-      json_query(url) { |url, p|
+    def multipart_post(path_components, sub_type = "form-data")
+      json_query(path(path_components)) { |url, p|
         request = Net::HTTP::Post.new(url)
         request.multipart sub_type, Array.new(yield(url))
         request
         }
     end
 
-    def put url, content_type, payload
-      json_query(url, {'Content-Length' => payload.length.to_s, 'Content-Type' => content_type}, payload) do |url, p, data|
+    def put(path_components, content_type, payload)
+      json_query(path(path_components), {'Content-Length' => payload.length.to_s, 'Content-Type' => content_type}, payload) do |url, p, data|
         request = Net::HTTP::Put.new(url, p)
         request.body = data
         request
       end
     end
 
-    def delete url
+    def delete(path_components)
       if block_given? then
-        yield(json_request(url) { |url| get(url) })
+        yield(json_request(path(path_components)) { |url| get(url) })
       end
-      json_query(url) { |url, p| Net::HTTP::Delete.new(url) }
+      json_query(path(path_components)) { |url, p| Net::HTTP::Delete.new(url) }
     end
 
   private

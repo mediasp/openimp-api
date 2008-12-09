@@ -3,7 +3,7 @@ class TestRelease < Test::Unit::TestCase
   include TestCommon
 
   def test_get_release
-    release = CI::Metadata::Release.new(:id => TEST_UPC)
+    release = CI::Metadata::Release.find(:upc => TEST_UPC)
     assert_instance_of CI::Metadata::Release, release
     tracks = release.tracks
     assert_instance_of Array, tracks
@@ -11,7 +11,7 @@ class TestRelease < Test::Unit::TestCase
   end
 
   def test_get_front_cover_for_release
-    release = CI::Metadata::Release.new(:id => TEST_UPC)
+    release = CI::Metadata::Release.find(:upc => TEST_UPC)
     assert_instance_of CI::Metadata::Release, release
     assert_equal "The Prodigy", release.main_artist
     front_cover = release.imagefrontcover

@@ -9,8 +9,10 @@ module CI
       #TODO getter and setter for files array, recording, release
       #TODO better way of doing inter-class associations.
 
-
-      def self.find_track_by_upc_and_sequence_number upc, sequence_number
+      def self.path_components(instance=nil)
+        if instance && instance.release && instance.sequence_number
+          instance.release.path_components + ['track', instance.sequence_number]
+        end
       end
     end
   end

@@ -28,8 +28,8 @@ module TestCommon
         File.read(file)
       else
         print "\nPassword: "
-        gets.chomp
-      end
+        gets
+      end.chomp
     end
     CI::MediaFileServer.configure(TestCommon.username, TestCommon.password, {:host => TestCommon.host, :protocol => TestCommon.protocol, :port => TestCommon.port})
   end

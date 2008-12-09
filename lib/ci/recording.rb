@@ -1,10 +1,16 @@
 module CI
   module Metadata
     class Recording < Asset
-      primary_key   :ISRC
-      base_url      :recording, :isrc
-      attributes    :LabelName, :MainArtist
+      attributes    :ISRC, :LabelName, :MainArtist
       collections   :Producers, :Mixers, :Composers, :Lyricists, :FeaturedArtists, :Artists, :Publishers, :tracks, :files
+
+      def self.path_components(instance=nil)
+        if instance
+          ['recording', 'isrc', instance.isrc] if instance.isrc
+        else
+          ['recording']
+        end
+      end
       
       # http://en.wikipedia.org/wiki/ISO_8601#Durations although we only handle the PT00H00M00S format of this for now
       # we expose this as an integer number of seconds

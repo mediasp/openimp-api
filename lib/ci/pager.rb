@@ -19,7 +19,9 @@ module CI
     end
 
     def [] n
-      MediaFileServer.get(@pages[n])
+      path = @pages[n]
+      path_components = path.sub!(/^\//,'').split('/')
+      MediaFileServer.get(path_components)
     end
     alias :page :[]
 

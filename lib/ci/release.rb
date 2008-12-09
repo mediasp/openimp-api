@@ -2,14 +2,20 @@ module CI
   module Metadata
     class Release < Asset
       #TODO code to convert ISO Durations and dates / times to ruby objects.
-      primary_key   :UPC
-      base_url      :release, :upc
-      attributes    :LabelName, :CatalogNumber, :ReleaseType, :ParentalWarningType, :PriceRangeType
+      attributes    :UPC, :LabelName, :CatalogNumber, :ReleaseType, :ParentalWarningType, :PriceRangeType
       attributes    :ReferenceTitle, :SubTitle, :Duration
       attributes    :MainArtist, :DisplayArtist
       attributes    :PLineYear, :PLineText, :CLineYear, :CLineText, :imagefrontcover
       attributes    :TrackCount
       collections   :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres
+
+      def self.path_components(instance=nil)
+        if instance
+          ['release', 'upc', instance.upc] if instance.upc
+        else
+          ['release']
+        end
+      end
 
       module ParentalWarning
         EXPLICIT                = 'Explicit'

@@ -15,7 +15,6 @@ module CI
   # The +Asset+ class defines the core features of server-side objects, including the ability to autoinstantiate them
   # from _JSON_ for transport across the network.
   class Asset
-    WILDCARD_ID = '*'.freeze
     # Simple implementation of a +class inheritable accessor+.
     def self.class_inheritable_accessor *args
       args.each do |arg|
@@ -31,25 +30,13 @@ module CI
       end
     end
  
-    class_inheritable_accessor  :api_base_url, :api_item_url
-
-    # Creates a canonical URL for the specified server-side object.
-    def self.url id, *actions
-      case id
-      when WILDCARD_ID
-        MediaFileServer.resolve self.api_base_url, actions.join("/")
-      else
-        MediaFileServer.resolve self.api_item_url, id, actions.join("/")
-      end
+    # should return a list of path components for (if no instance given) the base URL for the object type, otherwise the base URL for the instance given
+    def self.path_components(instance=nil)
+      raise NotImplemented, "You need to override CI::Asset.path_components"
     end
 
     def self.list
-      MediaFileServer.get url(WILDCARD_ID, 'list')
-    end
-
-    def self.base_url url, item_key = nil
-      @api_base_url = url
-      @api_item_url = [url, item_key].compact.join("/")
+      MediaFileServer.get(path_components + ['list'])
     end
 
     # A +meta programming helper method+ which converts an MFS attribute into more manageable forms.
@@ -59,34 +46,25 @@ module CI
       end
     end
 
-    # Not all MFS classes use +Id+ as their primary key, therefore we allow the primary key to be explicitly
-    # named whilst still keeping the notion of an id
-    def self.primary_key attribute
-      with_api_attributes(attribute) do |ruby_method, api_key|
-        define_method(:primary_key) { api_key }
-        
-        # once a unique primary key is defined, it makes sense to have a notion of equality corresponding to the primary key.
-        # if two instances of the same asset class have a primary key defined, and equal, then we consider the two instances equal.
-        define_method(:==) do |other|
-          super || (other.instance_of?(self.class) && id && id == other.id)
-        end
-        define_method(:hash) {id.hash}
-        alias_method(:eql?, :==)
-
-        [:id, ruby_method].each do |accessor|
-          define_method(accessor) { @parameters[api_key] }
-          define_method("#{accessor}=") { |value| @parameters[api_key] = value }
-        end
-      end
+    # equality based on the path_components (the URL is necessarily a unique identifier for a resource within the API)
+    def ==(other)
+      super or (other.instance_of?(self.class) && path_components && path_components == other.path_components)
     end
+    def hash; path_components.hash; end
+    alias :eql? :==
 
     # Defines an MFS attribute present on the current class and creates accessor methods for manupulating it.
     def self.attributes *attributes #:nodoc:
       with_api_attributes(*attributes) do |ruby_method, api_key|
         define_method(ruby_method) do
           # For attributes which expose only a representation we support lazy loading
-          @parameters[api_key] = Asset.new(@parameters[api_key]) if @parameters[api_key]["__REPRESENTATION__"] rescue false
-          @parameters[api_key]
+          result = @parameters[api_key]
+          if result.is_a?(Hash) && (url = result["__REPRESENTATION__"])
+            path_components = url.sub(/^\//,'').split('/')
+            @parameters[api_key] = MediaFileServer.get(path_components)
+          else
+            result
+          end
         end
         define_method("#{ruby_method}=") { |value| @parameters[api_key] = value }
       end
@@ -103,43 +81,41 @@ module CI
       end
     end
 
-    # We use a custom constructor to automatically load the correct object from the
-    # CI MFS system if the parameters to +new+ include a +primary key+.
-    def self.new parameters={}, *args
-      asset = allocate
-      case
-      when id = parameters[asset.primary_key] || parameters[:id]
-        asset = MediaFileServer.get(url(id))
-      when representation = parameters['__REPRESENTATION__']
-        asset = MediaFileServer.get(representation)
-      else
-        asset.send :initialize, parameters, *args
+    class << self
+      alias :json_create :new
+
+      def find(parameters)
+        stub = new(parameters)
+        path = stub.path_components
+        raise "Insufficient attributes were passed to CI::Asset.find to generate a URL" unless path
+        MediaFileServer.get(path)
       end
-      asset
+      
+      def find_or_new(parameters)
+        find(parameters) || new(parameters)
+      end
     end
-
-    # Create an instance of this class from a JSON object.
-    def self.json_create properties
-      asset = allocate
-      asset.send :initialize, properties
-      asset
-    end
-
-    primary_key   :Id
-    attributes    :__REPRESENTATION__
 
     def initialize parameters = {}
       @parameters = {}
       parameters.delete('__CLASS__')
+
+      representation = parameters.delete('__REPRESENTATION__')
+      @path_components = representation.sub(/^\//,'').split('/') if representation
+
       parameters.each do |k, v|
         setter = "#{k.to_method_name}="
         send(setter, v) if respond_to?(setter)
       end
     end
 
-    # Calculate a URL relative to the current server object.
-    def url action = nil
-      self.class.url id, action
+    def path_components(*args)
+      components = if defined?(@path_components)
+        @path_components
+      else
+        @path_components = self.class.path_components(self)
+      end
+      components && components + args
     end
 
     def to_json *a
@@ -158,26 +134,27 @@ module CI
     [:get, :get_octet_stream, :head, :delete].each do |m|
       class_eval <<-METHOD
         def #{m} action = nil
-          MediaFileServer.#{m} url(action)
+          MediaFileServer.#{m}(path_components(action))
         end
       METHOD
     end
 
     def post properties, action = nil, headers = {}
-      MediaFileServer.post url(action), properties, headers
+      MediaFileServer.post(path_components(action), properties, headers)
     end
 
     def multipart_post
-      MediaFileServer.multipart_post(url()) { |url| yield url }
+      MediaFileServer.multipart_post(path_components || self.class.path_components) {|url| yield url}
     end
 
     def put content_type, data
-      MediaFileServer.put url(), content_type, data
+      MediaFileServer.put(path_components, content_type, data)
     end
 
   protected
     def replace_with! asset
       @parameters = asset.parameters
+      @path_components = asset.path_components
       self
     end
 
@@ -190,13 +167,19 @@ module CI
   module Metadata
     # An +Encoding+ describes the audio codec associated with a server-side audio file.
     class Encoding < Asset
-      primary_key   :Name
-      base_url      :encoding
-      attributes    :Codec, :Family, :PreviewLength, :Channels, :Bitrate, :Description
+      attributes    :Name, :Codec, :Family, :PreviewLength, :Channels, :Bitrate, :Description
       @@encodings = nil
 
+      def self.path_components(instance=nil)
+        if instance
+          ['encoding', instance.name] if instance.name
+        else
+          ['encoding']
+        end
+      end
+
       def self.synchronize
-        @@encodings = MediaFileServer.get(url nil)
+        @@encodings = MediaFileServer.get(path_components)
       end
 
       def self.encodings
@@ -207,6 +190,5 @@ module CI
 
   # A +ContextualMethod+ is a method call avaiable on a server-side object.
   class ContextualMethod < Asset
-    primary_key   :Name
   end
 end

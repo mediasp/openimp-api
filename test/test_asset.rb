@@ -6,14 +6,14 @@ class TestAsset < Test::Unit::TestCase
     assert_nil CI::Metadata::Encoding.encodings
     CI::Metadata::Encoding.synchronize
     assert_not_nil CI::Metadata::Encoding.encodings
-    encoding = CI::Metadata::Encoding.new(:id => 'wma_192')
+    encoding = CI::Metadata::Encoding.new(:name => 'wma_192')
     assert_instance_of CI::Metadata::Encoding, encoding
     assert_equal encoding.name, 'wma_192'
   end
   
   def test_equality_and_lack_thereof
-    asset = CI::Metadata::Release.new(:id => TEST_UPC)
-    asset2 = CI::Metadata::Release.new(:id => TEST_UPC)
+    asset = CI::Metadata::Release.new(:upc => TEST_UPC)
+    asset2 = CI::Metadata::Release.new(:upc => TEST_UPC)
     assert_equal asset, asset2
     assert_equal asset, asset
     assert_not_equal asset, 1234

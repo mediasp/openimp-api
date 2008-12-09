@@ -3,14 +3,22 @@ require 'pathname'
 module CI
   # A +FileToken+ is used to control access to a file stored on the server.
   class FileToken < Asset
-    base_url      :filetoken
-    attributes    :URL, :PlayURL, :RedirectWhenExpiredUrl, :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
+    attributes    :Id, :URL, :PlayURL, :RedirectWhenExpiredUrl, :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
     attributes    :file
+
+    def self.path_components(instance=nil)
+      if instance
+        ['filetoken', instance.id] if instance.id
+      else
+        ['filetoken']
+      end
+    end
+
 
     # The MFS API exposes a FileToken creation via several different URLs. However we will never want to create
     # a file token that we do not already have a file to hand, and hence we only use the FileStore URL.
     def self.create file, properties = {}
-      MediaFileServer.post file.url('createfiletoken'), properties
+      MediaFileServer.post(file.path_components('createfiletoken'), properties)
     end
 
     # As an alternative a FileToken object can be created and the appropriate values set, then the save method
@@ -34,10 +42,17 @@ module CI
 
 
   class File < Asset
-    base_url      :filestore
-    attributes    :MimeMajor, :MimeMinor, :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
+    attributes    :Id, :MimeMajor, :MimeMinor, :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
     attr_writer   :content
     attr_reader   :file_name
+
+    def self.path_components(instance=nil)
+      if instance
+        ['filestore', instance.id] if instance.id
+      else
+        ['filestore']
+      end
+    end
 
     def self.disk_file name, mime_type
       new(:mime_type => mime_type, :content => ::File.read(name), :file_name => name)
@@ -116,7 +131,7 @@ module CI
     RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif' }
 
     def resize width, height, mode = :NOMODIFIER, properties = {}
-      MediaFileServer.post(url('contextualmethod/Resize'), properties.merge(:targetX => width, :targetY => height, :resizeType => "IMAGE_RESIZE_#{mode}", :Synchronous => 1))
+      MediaFileServer.post(path_components('contextualmethod', 'Resize'), properties.merge(:targetX => width, :targetY => height, :resizeType => "IMAGE_RESIZE_#{mode}", :Synchronous => 1))
     end
 
     def resize! width, height, mode = :NOMODIFIER, properties = {}
