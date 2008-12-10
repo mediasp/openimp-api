@@ -30,7 +30,8 @@ module CI
       end
     end
  
-    # should return a list of path components for (if no instance given) the base URL for the object type, otherwise the base URL for the instance given
+    # should return a list of path components for (if no instance given) the base URL for the object type, otherwise the base URL for the instance given.
+    # You need to override this to specify the URL format for any asset subclass.
     def self.path_components(instance=nil)
       raise NotImplemented, "You need to override CI::Asset.path_components"
     end
@@ -82,6 +83,8 @@ module CI
     class << self
       alias :json_create :new
 
+      # Call to fetch an asset from the database. You need to specify the attributes necessary to identify the object, as required by your
+      # overriden version of CI::Asset.path_components to generate a URL path for the object.
       def find(parameters)
         stub = new(parameters)
         path = stub.path_components
@@ -94,6 +97,11 @@ module CI
       end
     end
 
+    # this can be used to create a new instance of an asset, either directly from the Hash resulting from the JSON parse,
+    # or from a user-supplied attribute hash.
+    # (This will use the special __REPRESENTATION__ attribute returned by the API to cache the instance's 'path_components', which is something we need to do
+    #  in the case where a __CLASS__ and a __REPRESENTATION__ are supplied but there aren't sufficient attributes supplied to generate the URL
+    #  path for the object ourself.)
     def initialize parameters = {}
       @parameters = {}
       parameters.delete('__CLASS__')
@@ -107,6 +115,11 @@ module CI
       end
     end
 
+    # this returns an array of strings consisting of the path components for the canonical URL for this asset/resource.
+    # as a convenience, you can pass additional path components as arguments and it'll tack them on the end.
+    # note that objects are compared for identity by comparing these; also note that sometimes, the value of this method is obtained from the
+    # original __REPRESENTATION__ we were passed for the object, whereas other times (eg in the case of a new object) it's generated from the
+    # object's attributes. 
     def path_components(*args)
       components = if defined?(@path_components)
         @path_components
@@ -129,6 +142,9 @@ module CI
       result.to_json(*a)
     end
 
+    # in all these methods, MediaFileServer takes a list of path components, and handles generating the URL from these itself.
+    # (this is because of the possible presence of extra path components which depend on the API endpoint URL - eg /v1/ )
+
     [:get, :get_octet_stream, :head, :delete].each do |m|
       class_eval <<-METHOD
         def #{m} action = nil
@@ -149,11 +165,13 @@ module CI
       MediaFileServer.put(path_components, content_type, data)
     end
     
+    # returns a reloaded version of self, fetched from the URL given by its path_components
     def reload
       pc = path_components() or raise "Insufficient attributes were defined to generate a URL in order to reload"
       MediaFileServer.get(pc)
     end
     
+    # state-modifying version of reload
     def reload!
       replace_with!(reload)
     end
