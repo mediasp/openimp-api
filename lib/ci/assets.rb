@@ -113,7 +113,7 @@ module CI
       components = if defined?(@path_components)
         @path_components
       else
-        @path_components = self.class.path_components(self)
+        @path_components = self.class.path_components(self) and @path_components.map! {|c| c.to_s} # we normalise this to a string representation for comparison purposes
       end
       components && components + args
     end
@@ -149,6 +149,15 @@ module CI
 
     def put content_type, data
       MediaFileServer.put(path_components, content_type, data)
+    end
+    
+    def reload
+      pc = path_components() or raise "Insufficient attributes were defined to generate a URL in order to reload"
+      MediaFileServer.get(pc)
+    end
+    
+    def reload!
+      replace_with!(reload)
     end
 
   protected
