@@ -24,7 +24,6 @@ spec = Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.test_files = FileList["test/**/test_*.rb"].to_a - ['test/test_helper.rb']
   s.has_rdoc = false
-  s.add_dependency('activesupport')
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|
