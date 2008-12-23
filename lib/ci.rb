@@ -3,7 +3,11 @@ $:.unshift(_mypath) unless $:.include?(_mypath) || $:.include?(File.expand_path(
 _mypath = nil
 
 require 'rubygems'
-require 'json'
+begin
+  require 'json'
+rescue LoadError
+  raise LoadError, "You need to install either the json or json-jruby gem, as appropriate"
+end
 require 'uri'
 require 'net/http'
 require 'net/https'
