@@ -1,3 +1,4 @@
+require 'ci/assets'
 require 'pathname'
 
 module CI
