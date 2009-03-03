@@ -13,7 +13,7 @@ module TestCommon
   end
   @username = 'playlouderapitest@ci-support.com'
   @password = nil
-  @host = 'api.stage'
+  @host = 'stage.api.cissme.com'
   @port = 80
   @protocol = :http
   

@@ -83,7 +83,7 @@ module CI
     # Performs an +MFS::File::Request::Store+ operation on the server, creating a new file.
     def store
       multipart_post do
-        [ "Content-Disposition: form-data; name=\"file\"; filename=\"#{file_name.basename rescue ""}\"\r\nContent-Type: #{mime_type}\r\n\r\n#{content}",
+        [ "Content-Disposition: form-data; name=\"file\"; filename=\"#{file_name.basename rescue "null"}\"\r\nContent-Type: #{mime_type}\r\n\r\n#{content}",
           "Content-Disposition: form-data; name=\"MimeMajor\"\r\n\r\n#{mime_major}",
           "Content-Disposition: form-data; name=\"MimeMinor\"\r\n\r\n#{mime_minor}"
           ]

@@ -14,9 +14,9 @@ end
 
 spec = Gem::Specification.new do |s|
   s.name = "ci-api"
-  s.version = "0.1.0"
-  s.authors = ["Media Service Provider Ltd", "Tim Cowlishaw"]
-  s.email = "tim.cowlishaw@playlouder.com"
+  s.version = "0.1.1"
+  s.authors = ["Media Service Provider Ltd", "Tim Cowlishaw", "Eleanor McHugh"]
+  s.email = "help@playlouder.com"
   s.homepage = "http://dev.playlouder.com"
   s.platform = Gem::Platform::RUBY
   s.summary = "A client library for Consolidated Independent's (http://ci-info.com) Media Fulfilment API"
