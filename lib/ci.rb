@@ -28,7 +28,7 @@ module CI
     PORT = 443
     HOST = 'mfs.ci-support.com'
     VERSION = 'v1'
-    
+
     def self.method_missing method, *arguments, &block  # :nodoc:
       # A dirty little hack to obviate the need of writing MediaFileServer.instance.method
       # to access instance methods
@@ -52,11 +52,7 @@ module CI
     end
 
     def get_octet_stream(path_components)
-      Net::HTTP.start(@host, @port) do |connection|
-        if @protocol == :https then
-          connection.use_ssl = true
-          connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        end
+      start_http_connection do |connection|
         request = Net::HTTP::Get.new(path(path_components))
         request['accept'] = 'application/json'
         request.basic_auth(@username, @password)
@@ -108,16 +104,21 @@ module CI
     end
 
   private
+    def start_http_connection(&block)
+      connection = Net::HTTP.new(@host, @port)
+      if @protocol == :https then
+        connection.use_ssl = true
+        connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
+      connection.start(&block)
+    end
+
     # The API uses a custom JSON format for encoding class data. A +json_query+ automatically takes
     # care of the necessary translation to return a response object of the correct class.
     #
     # TODO: Improve error handling to be useful.
     def json_query url, attributes = {}, payload = nil, &block
-      Net::HTTP.start(@host, @port) do |connection|
-        if @protocol == :https then
-          connection.use_ssl = true
-          connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        end
+      start_http_connection do |connection|
         request = yield(url, attributes, payload)
         request['Accept'] = 'application/json'
         request.basic_auth(@username, @password)
@@ -147,7 +148,7 @@ def load_files(dir) #:nodoc:
     if f =~ /\.rb$/ then
       require "#{dir}/#{f}"
       folder = "#{dir}/#{f.sub(/\.rb$/, '/')}"
-      load_files(folder) if File.exists?(folder) 
+      load_files(folder) if File.exists?(folder)
     end
   end
 end
