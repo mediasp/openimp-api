@@ -63,8 +63,14 @@ module CI
       "#{mime_major}/#{mime_minor}"
     end
 
-    def mime_type= specifier
-      self.mime_major, self.mime_minor = *specifier.split("/")
+    # These are mime-type normalizations which are required in order to make mime types acceptable to the CI API
+    NORMALIZE_MIME_TYPE = {
+      'image/pjpeg' => 'image/jpeg'
+    }
+
+    def mime_type=(mime_type)
+      mime_type = NORMALIZE_MIME_TYPE[mime_type] || mime_type
+      self.mime_major, self.mime_minor = *mime_type.split("/")
     end
 
     def content
@@ -93,7 +99,7 @@ module CI
     def store!
       replace_with! store
     end
-    
+
     def create_file_token unlimited = false, attempts = 2, successes = 2
       FileToken.create self, :Unlimited => unlimited, :MaxDownloadAttempts => attempts, :MaxDownloadSuccesses => successes
     end
