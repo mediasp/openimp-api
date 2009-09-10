@@ -24,27 +24,23 @@ module CI
   class MediaFileServer
     include Singleton
 
-    PROTOCOL = :https
-    PORT = 443
-    HOST = 'mfs.ci-support.com'
-    VERSION = 'v1'
-
     def self.method_missing method, *arguments, &block  # :nodoc:
       # A dirty little hack to obviate the need of writing MediaFileServer.instance.method
       # to access instance methods
       instance.send method, *arguments, &block
     end
 
-    def configure username, password, options = {}
-      @username = username
-      @password = password
-      @protocol = options[:protocol] || :https
-      @host = options[:host] || 'mfs.ci-support.com'
-      @port = options[:port] || 44
+    def configure(username, password, options = {})
+      @username   = username
+      @password   = password
+      @protocol   = options[:protocol]  || :https
+      @host       = options[:host]      || 'mfs.ci-support.com'
+      @port       = options[:port]      || {:https => 443, :http => 80}[@protocol]
+      @base_path  = options[:base_path] || '/media/v1'
     end
 
     def path(path_components)
-      "/#{VERSION}/#{path_components.join('/')}"
+      [@base_path, *path_components].join('/')
     end
 
     def get(path_components, options={})

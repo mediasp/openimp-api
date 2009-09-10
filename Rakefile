@@ -14,7 +14,7 @@ end
 
 spec = Gem::Specification.new do |s|
   s.name = "ci-api"
-  s.version = "0.1.3"
+  s.version = "0.1.4"
   s.authors = ["Media Service Provider Ltd", "Tim Cowlishaw", "Eleanor McHugh"]
   s.email = "help@playlouder.com"
   s.homepage = "http://dev.playlouder.com"
