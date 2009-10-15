@@ -34,7 +34,7 @@ module CI
       @username   = username
       @password   = password
       @protocol   = options[:protocol]  || :https
-      @host       = options[:host]      || 'mfs.ci-support.com'
+      @host       = options[:host]      || 'api.cissme.com'
       @port       = options[:port]      || {:https => 443, :http => 80}[@protocol]
       @base_path  = options[:base_path] || '/media/v1'
     end
