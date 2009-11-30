@@ -1,7 +1,3 @@
-_mypath = File.dirname(__FILE__)
-$:.unshift(_mypath) unless $:.include?(_mypath) || $:.include?(File.expand_path(_mypath))
-_mypath = nil
-
 require 'rubygems'
 begin
   require 'json'
@@ -11,7 +7,7 @@ end
 require 'uri'
 require 'net/http'
 require 'net/https'
-require 'core_extensions.rb'
+require 'core_extensions'
 require 'singleton'
 
 #Your username and password for the CI api should be set with:
@@ -139,13 +135,9 @@ module CI
   end
 end
 
-def load_files(dir) #:nodoc:
-  Dir.new(dir).each do |f|
-    if f =~ /\.rb$/ then
-      require "#{dir}/#{f}"
-      folder = "#{dir}/#{f.sub(/\.rb$/, '/')}"
-      load_files(folder) if File.exists?(folder)
-    end
-  end
-end
-load_files(File.dirname(__FILE__) + '/ci/')
+require 'ci/assets'
+require 'ci/files'
+require 'ci/pager'
+require 'ci/recording'
+require 'ci/release'
+require 'ci/track'
