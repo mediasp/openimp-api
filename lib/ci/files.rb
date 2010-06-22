@@ -43,7 +43,7 @@ module CI
 
 
   class File < Asset
-    attributes    :Id, :MimeMajor, :MimeMinor, :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize
+    attributes    :Id, :MimeMajor, :MimeMinor, :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize, :crc32
     attr_writer   :content
     attr_reader   :file_name
 
