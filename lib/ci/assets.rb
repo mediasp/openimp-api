@@ -21,7 +21,7 @@ module CI
         class_eval <<-METHODS
           def self.#{arg}
             @#{arg} ||= superclass.#{arg} unless self == CI::Asset
-          end 
+          end
 
           def self.#{arg}=(val)
             @#{arg}=val
@@ -29,7 +29,7 @@ module CI
         METHODS
       end
     end
- 
+
     # should return a list of path components for (if no instance given) the base URL for the object type, otherwise the base URL for the instance given.
     # You need to override this to specify the URL format for any asset subclass.
     def self.path_components(instance=nil)
@@ -40,10 +40,17 @@ module CI
       MediaFileServer.get(path_components + ['list'])
     end
 
+    def self.make_ci_method_name(string)
+      string.to_s.
+        gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+        gsub(/([a-z\d])([A-Z])/,'\1_\2').tr("-", "_").
+        downcase
+    end
+
     # A +meta programming helper method+ which converts an MFS attribute into more manageable forms.
     def self.with_api_attributes *attributes
       Array.new(attributes).each do |api_attribute|
-        yield api_attribute.to_method_name, api_attribute.to_sym
+        yield(make_ci_method_name(api_attribute), api_attribute.to_sym)
       end
     end
 
@@ -91,7 +98,7 @@ module CI
         raise "Insufficient attributes were passed to CI::Asset.find to generate a URL" unless path
         MediaFileServer.get(path)
       end
-      
+
       def find_or_new(parameters)
         find(parameters) || new(parameters)
       end
@@ -110,7 +117,7 @@ module CI
       @path_components = representation.sub(/^\//,'').split('/') if representation
 
       parameters.each do |k, v|
-        setter = "#{k.to_method_name}="
+        setter = self.class.make_ci_method_name(k) << '='
         send(setter, v) if respond_to?(setter)
       end
     end
@@ -119,7 +126,7 @@ module CI
     # as a convenience, you can pass additional path components as arguments and it'll tack them on the end.
     # note that objects are compared for identity by comparing these; also note that sometimes, the value of this method is obtained from the
     # original __REPRESENTATION__ we were passed for the object, whereas other times (eg in the case of a new object) it's generated from the
-    # object's attributes. 
+    # object's attributes.
     def path_components(*args)
       components = if defined?(@path_components)
         @path_components
@@ -164,13 +171,13 @@ module CI
     def put content_type, data
       MediaFileServer.put(path_components, content_type, data)
     end
-    
+
     # returns a reloaded version of self, fetched from the URL given by its path_components
     def reload
       pc = path_components() or raise "Insufficient attributes were defined to generate a URL in order to reload"
       MediaFileServer.get(pc)
     end
-    
+
     # state-modifying version of reload
     def reload!
       replace_with!(reload)

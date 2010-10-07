@@ -7,7 +7,6 @@ end
 require 'uri'
 require 'net/http'
 require 'net/https'
-require 'core_extensions'
 require 'singleton'
 
 #Your username and password for the CI api should be set with:
@@ -72,12 +71,25 @@ module CI
         }
     end
 
+    MIME_DELIMITER_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'()+_-./:=?" # "," RFC valid character but not supported by MFS parser
+    def create_mime_delimiter(length = 30)
+      srand; result = ''; raise 'too long' if length > 70
+      random_range = MIME_DELIMITER_CHARS.length
+      length.times { result << MIME_DELIMITER_CHARS[rand(random_range), 1] }
+      result
+    end
+
     def multipart_post(path_components, sub_type = "form-data")
-      json_query(path(path_components)) { |url, p|
+      json_query(path(path_components)) do |url, p|
         request = Net::HTTP::Post.new(url)
-        request.multipart sub_type, Array.new(yield(url))
+        bodies = [yield(url)]
+        delimiter = create_mime_delimiter
+        request['Content-Type'] = "multipart/#{sub_type}; boundary=\"#{delimiter}\""
+        separator = "\r\n--#{delimiter}\r\n"
+        request.body = "\r\n#{separator}#{bodies.join(separator)}\r\n--#{delimiter}--\r\n"
+        request['Content-Length'] = request.body.length.to_s # will need to change to bytesize for 1.9
         request
-        }
+      end
     end
 
     def put(path_components, content_type, payload)
@@ -109,7 +121,7 @@ module CI
     # care of the necessary translation to return a response object of the correct class.
     #
     # TODO: Improve error handling to be useful.
-    def json_query url, attributes = {}, payload = nil, &block
+    def json_query(url, attributes = {}, payload = nil)
       start_http_connection do |connection|
         request = yield(url, attributes, payload)
         request['Accept'] = 'application/json'
@@ -120,14 +132,24 @@ module CI
         when Net::HTTPClientError, Net::HTTPServerError
           raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
         else
-          # The MFS namespace is used by CI's server-side code but we use CI locally and perform some behind-the-scenes magic
-          # to make it look elegant. This is a legacy of the API namespace previously used, but as it makes the namespace
-          # conversion more explicit we'll keep it for the time being.
-          with_aliased_namespace(CI, :MFS) do
-            JSON.instance_variable_set "@create_id", '__CLASS__'
-            result = JSON.parse(response.body)
-            JSON.instance_variable_set "@create_id", 'json_class'
-            result
+          # This is a monstous hack to automatically have the JSON parser construct classes in our
+          # CI namespace corresponding to the class names in the __CLASS__ attributes in the JSON,
+          # /except/ using 'CI' as the namespace rather than 'MFS' as they do.
+          #
+          # Suffice to say it's not threadsafe, or rather it is but only thanks to the 'Thread.exclusive'
+          Thread.exclusive do
+            old_binding = (Object.const_get(:MFS) rescue nil)
+            Object.send(:remove_const, :MFS) if old_binding
+            Object.const_set(:MFS, CI)
+            old_json_create_id = JSON.create_id
+            JSON.create_id = '__CLASS__'
+            begin
+              JSON.parse(response.body)
+            ensure
+              Object.send(:remove_const, :MFS)
+              Object.const_set(:MFS, old_binding) if old_binding
+              JSON.create_id = old_json_create_id
+            end
           end
         end
       end
