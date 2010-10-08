@@ -10,7 +10,7 @@ class TestAsset < Test::Unit::TestCase
     assert_instance_of CI::Metadata::Encoding, encoding
     assert_equal encoding.name, 'wma_192'
   end
-  
+
   def test_equality_and_lack_thereof
     asset = CI::Metadata::Release.new(:upc => TEST_UPC)
     asset2 = CI::Metadata::Release.new(:upc => TEST_UPC)
@@ -22,7 +22,7 @@ class TestAsset < Test::Unit::TestCase
     assert_equal 1, [asset, asset2].uniq.length
     assert_equal 1, {asset => 1}[asset2]
   end
-  
+
   def test_reload
     # not desparately thorough re making sure full attributes are present post-reload but makes sure it works in a basic way
     asset = CI::Metadata::Release.new(:upc => TEST_UPC)

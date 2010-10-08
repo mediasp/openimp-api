@@ -18,7 +18,7 @@ module CI
 
     # The MFS API exposes a FileToken creation via several different URLs. However we will never want to create
     # a file token that we do not already have a file to hand, and hence we only use the FileStore URL.
-    def self.create file, properties = {}
+    def self.create(file, properties = {})
       MediaFileServer.post(file.path_components('createfiletoken'), properties)
     end
 
@@ -55,7 +55,7 @@ module CI
       end
     end
 
-    def self.disk_file name, mime_type
+    def self.disk_file(name, mime_type)
       new(:mime_type => mime_type, :content => ::File.read(name), :file_name => name)
     end
 
@@ -77,7 +77,7 @@ module CI
       @content ||= retrieve_content
     end
 
-    def file_name= name
+    def file_name=(name)
       @file_name = (Pathname.new(name.to_s) rescue name)
     end
 
@@ -100,7 +100,7 @@ module CI
       replace_with! store
     end
 
-    def create_file_token unlimited = false, attempts = 2, successes = 2
+    def create_file_token(unlimited = false, attempts = 2, successes = 2)
       FileToken.create self, :Unlimited => unlimited, :MaxDownloadAttempts => attempts, :MaxDownloadSuccesses => successes
     end
 
@@ -112,7 +112,7 @@ module CI
       @contextual_methods ||= get('contextualmethod')
     end
 
-    def sub_type mime_type
+    def sub_type(mime_type)
       post({ :NewType => "MFS::File::#{/\//.match(mime_type).pre_match.capitalize}" }, 'becomesubtype')
     end
 
@@ -137,7 +137,7 @@ module CI
     RESIZE_METHODS = [ 'NOMODIFIER', 'EXACT', 'SQUARE', 'SMALLER', 'LARGER' ]
     RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif' }
 
-    def resize width, height, mode = :NOMODIFIER, properties = {}
+    def resize(width, height, mode = :NOMODIFIER, properties = {})
       MediaFileServer.post(path_components('contextualmethod', 'Resize'), properties.merge(:targetX => width, :targetY => height, :resizeType => "IMAGE_RESIZE_#{mode}", :Synchronous => 1))
     end
 

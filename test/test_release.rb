@@ -17,7 +17,7 @@ class TestRelease < Test::Unit::TestCase
     front_cover = release.imagefrontcover
     assert_instance_of CI::File::Image, front_cover
   end
-  
+
   def test_release_list
     list = CI::Metadata::Release.list
     assert_instance_of CI::Pager, list

@@ -31,7 +31,7 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal mime_major, file.mime_major
     assert_equal mime_minor, file.mime_minor
   end
- 
+
   def test_upload_file
     file = CI::File.disk_file(TEST_TEXT_FILE, 'text/plain')
     assert_instance_of CI::File, file
@@ -47,8 +47,8 @@ class TestFilestore < Test::Unit::TestCase
     file.content = nil
     file.retrieve_content
     assert_equal file.content, original_data
-  end  
- 
+  end
+
   def test_find_file
     store_text_file
     file = CI::File.find(:id => @text_id)
@@ -60,7 +60,7 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal file.id, @text_id
     assert_equal file.content, @text_data
   end
- 
+
   def test_get_token
     store_text_file
     file = CI::File.find(:id => @text_id)
@@ -71,7 +71,7 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal file.content, token.file.content
     assert_equal file.content, open(token.url) {|r| r.read}
   end
- 
+
   def test_file_deletion
     store_text_file
     file = CI::File.find(:id => @text_id)
@@ -80,14 +80,14 @@ class TestFilestore < Test::Unit::TestCase
     assert_instance_of CI::File, placeholder
     assert_equal "DELETED", placeholder.stored
   end
- 
+
   def test_image_file_handling
     store_image_file
     file = CI::File.find(:id => @image_id)
     assert_instance_of CI::File, file
     file = file.sub_type("image/jpeg")
     assert_instance_of CI::File::Image, file
- 
+
     contextual_methods = file.contextual_methods
     assert_instance_of Array, contextual_methods
     contextual_methods.each do |method|
@@ -100,7 +100,7 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal 300, file.height.to_i
     assert_not_equal digest, file.sha1_digest_base64
   end
- 
+
   def test_filestore_list
     list = CI::File.list
     assert_instance_of CI::Pager, list

@@ -19,7 +19,7 @@ module CI
   class MediaFileServer
     include Singleton
 
-    def self.method_missing method, *arguments, &block  # :nodoc:
+    def self.method_missing(method, *arguments, &block)  # :nodoc:
       # A dirty little hack to obviate the need of writing MediaFileServer.instance.method
       # to access instance methods
       instance.send method, *arguments, &block

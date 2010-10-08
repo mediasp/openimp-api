@@ -8,7 +8,7 @@ module CI
       alias :json_create :new
     end
 
-    def initialize json_data
+    def initialize(json_data)
       @pages = json_data['Pages']
     end
 

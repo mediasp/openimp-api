@@ -1,6 +1,6 @@
 module CI
   class Error < Exception
-    def self.json_create properties
+    def self.json_create(properties)
       raise new(properties["errormessage"])
     end
 
@@ -16,7 +16,7 @@ module CI
   # from _JSON_ for transport across the network.
   class Asset
     # Simple implementation of a +class inheritable accessor+.
-    def self.class_inheritable_accessor *args
+    def self.class_inheritable_accessor(*args)
       args.each do |arg|
         class_eval <<-METHODS
           def self.#{arg}
@@ -48,7 +48,7 @@ module CI
     end
 
     # A +meta programming helper method+ which converts an MFS attribute into more manageable forms.
-    def self.with_api_attributes *attributes
+    def self.with_api_attributes(*attributes)
       Array.new(attributes).each do |api_attribute|
         yield(make_ci_method_name(api_attribute), api_attribute.to_sym)
       end
@@ -62,7 +62,7 @@ module CI
     alias :eql? :==
 
     # Defines an MFS attribute present on the current class and creates accessor methods for manupulating it.
-    def self.attributes *attributes #:nodoc:
+    def self.attributes(*attributes) #:nodoc:
       with_api_attributes(*attributes) do |ruby_method, api_key|
         define_method(ruby_method) do
           # For attributes which expose only a representation we support lazy loading
@@ -80,7 +80,7 @@ module CI
 
     # Defines an MFS attribute as representing a collection of one or more server-side objects and creates
     # accessor methods for manipulating it.
-    def self.collections *attributes
+    def self.collections(*attributes)
       with_api_attributes(*attributes) do |ruby_method, api_key|
         define_method(ruby_method) { @parameters[api_key] || [] }
         define_method("#{ruby_method}=") {|values| @parameters[api_key] = values}
@@ -109,7 +109,7 @@ module CI
     # (This will use the special __REPRESENTATION__ attribute returned by the API to cache the instance's 'path_components', which is something we need to do
     #  in the case where a __CLASS__ and a __REPRESENTATION__ are supplied but there aren't sufficient attributes supplied to generate the URL
     #  path for the object ourself.)
-    def initialize parameters = {}
+    def initialize(parameters = {})
       @parameters = {}
       parameters.delete('__CLASS__')
 
@@ -136,7 +136,7 @@ module CI
       components && components + args
     end
 
-    def to_json *a
+    def to_json(*a)
       result = {'__CLASS__' => self.class.name.sub(/CI::/i, 'MFS::')}
       parameters.each do |k,v|
         result[k] = case v
@@ -160,7 +160,7 @@ module CI
       METHOD
     end
 
-    def post properties, action = nil, headers = {}
+    def post(properties, action = nil, headers = {})
       MediaFileServer.post(path_components(action), properties, headers)
     end
 
@@ -168,7 +168,7 @@ module CI
       MediaFileServer.multipart_post(path_components || self.class.path_components) {|url| yield url}
     end
 
-    def put content_type, data
+    def put(content_type, data)
       MediaFileServer.put(path_components, content_type, data)
     end
 
