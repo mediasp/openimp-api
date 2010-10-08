@@ -132,22 +132,31 @@ module CI
         when Net::HTTPClientError, Net::HTTPServerError
           raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
         else
-          # This is a monstous hack to automatically have the JSON parser construct classes in our
-          # CI namespace corresponding to the class names in the __CLASS__ attributes in the JSON,
-          # /except/ using 'CI' as the namespace rather than 'MFS' as they do.
+          # This is a monstous hack to automatically have the JSON parser construct classes
+          # corresponding to the class names in the __CLASS__ attributes in the JSON, /except/
+          # using 'CI' as the namespace rather than (variously) 'MFS' or 'MediaAPI' as they do.
           #
           # Suffice to say it's not threadsafe, or rather it is but only thanks to the 'Thread.exclusive'
           Thread.exclusive do
-            old_binding = (Object.const_get(:MFS) rescue nil)
-            Object.send(:remove_const, :MFS) if old_binding
+            old_mfs = (Object.const_get(:MFS) rescue nil)
+            Object.send(:remove_const, :MFS) if old_mfs
             Object.const_set(:MFS, CI)
+
+            old_media_api = (Object.const_get(:MediaAPI) rescue nil)
+            Object.send(:remove_const, :MediaAPI) if old_media_api
+            Object.const_set(:MediaAPI, CI)
+
             old_json_create_id = JSON.create_id
             JSON.create_id = '__CLASS__'
+
             begin
+              puts response.body
               JSON.parse(response.body)
             ensure
               Object.send(:remove_const, :MFS)
-              Object.const_set(:MFS, old_binding) if old_binding
+              Object.const_set(:MFS, old_mfs) if old_mfs
+              Object.send(:remove_const, :MediaAPI)
+              Object.const_set(:MediaAPI, old_media_api) if old_media_api
               JSON.create_id = old_json_create_id
             end
           end
@@ -163,3 +172,4 @@ require 'ci/pager'
 require 'ci/recording'
 require 'ci/release'
 require 'ci/track'
+require 'ci/data'

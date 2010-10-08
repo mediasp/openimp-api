@@ -5,7 +5,7 @@ module CI
       attributes    :PLineYear, :PLineText, :CLineYear, :CLineText
       attributes    :SequenceNumber, :VolumeNumber, :TrackNumber
       attributes    :recording, :release
-      collections   :files, :Genres, :SubGenres
+      collections   :files, :Genres, :SubGenres, :offers
       #TODO getter and setter for files array, recording, release
       #TODO better way of doing inter-class associations.
 

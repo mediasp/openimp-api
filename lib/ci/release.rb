@@ -6,8 +6,9 @@ module CI
       attributes    :ReferenceTitle, :SubTitle, :Duration
       attributes    :MainArtist, :DisplayArtist
       attributes    :PLineYear, :PLineText, :CLineYear, :CLineText, :imagefrontcover
-      attributes    :TrackCount
-      collections   :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres
+      attributes    :TrackCount, :ReleaseDate, :external_identifiers
+
+      collections   :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres, :offers
 
       def self.path_components(instance=nil)
         if instance

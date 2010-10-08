@@ -5,7 +5,7 @@ require File.dirname(__FILE__) + '/../lib/ci'
 module TestCommon
   TEST_TEXT_FILE = "#{File.dirname(__FILE__)}/test_assets/test_file.txt"
   TEST_IMAGE_FILE = "#{File.dirname(__FILE__)}/test_assets/test_image.jpg"
-  TEST_UPC = 634904018320
+  TEST_UPC = "634904018320"
 
   class << self
     attr_accessor :username, :password, :options

@@ -1,8 +1,9 @@
 module CI
   module Metadata
     class Recording < Asset
-      attributes    :ISRC, :LabelName, :MainArtist
-      collections   :Producers, :Mixers, :Composers, :Lyricists, :FeaturedArtists, :Artists, :Publishers, :tracks, :files
+      attributes    :ISRC, :LabelName, :MainArtist, :external_identifiers
+      collections   :Producers, :Mixers, :Composers, :Lyricists, :FeaturedArtists, :Artists
+      collections   :Publishers, :tracks, :files
 
       def self.path_components(instance=nil)
         if instance
@@ -11,7 +12,7 @@ module CI
           ['recording']
         end
       end
-      
+
       # http://en.wikipedia.org/wiki/ISO_8601#Durations although we only handle the PT00H00M00S format of this for now
       # we expose this as an integer number of seconds
       def duration
@@ -20,7 +21,7 @@ module CI
           $1.to_i*3600 + $2.to_i*60 + $3.to_i
         end
       end
-      
+
       def duration=(value)
         @parameters['Duration'] = case value
         when String then value
