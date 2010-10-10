@@ -1,7 +1,6 @@
-require File.dirname(__FILE__) + '/test_common.rb'
-class TestAsset < Test::Unit::TestCase
-  include TestCommon
+require 'test/common'
 
+class TestAsset < Test::Unit::TestCase
   def test_list_encodings
     assert_nil CI::Metadata::Encoding.encodings
     CI::Metadata::Encoding.synchronize

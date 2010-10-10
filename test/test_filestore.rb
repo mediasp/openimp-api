@@ -1,8 +1,7 @@
-require File.dirname(__FILE__) + '/test_common.rb'
+require 'test/common'
+require 'open-uri'
 
 class TestFilestore < Test::Unit::TestCase
-  include TestCommon
-
   def store_text_file
     if !@text_id then
       file = CI::File.disk_file(TEST_TEXT_FILE, "text/plain")
