@@ -31,11 +31,11 @@ module CI
     [:Unlimited, :Valid].each do |m|
       class_eval <<-METHODS
         def #{make_ci_method_name(m)}
-          @parameters[:#{m}]
+          @parameters[#{m.inspect}]
         end
 
         def #{make_ci_method_name(m)}= status
-          @parameters[:#{m}] = [1, true].include?(status)
+          @parameters[#{m.inspect}] = [1, true].include?(status)
         end
       METHODS
     end

@@ -50,7 +50,7 @@ module CI
     # A +meta programming helper method+ which converts an MFS attribute into more manageable forms.
     def self.with_api_attributes(*attributes)
       Array.new(attributes).each do |api_attribute|
-        yield(make_ci_method_name(api_attribute), api_attribute.to_sym)
+        yield(make_ci_method_name(api_attribute), api_attribute.to_s)
       end
     end
 
@@ -61,9 +61,17 @@ module CI
     def hash; path_components.hash; end
     alias :eql? :==
 
+    def self.attribute_types
+      @attribute_types ||= (superclass.respond_to?(:attribute_types) ? superclass.attribute_types.dup : {})
+    end
+
     # Defines an MFS attribute present on the current class and creates accessor methods for manupulating it.
     def self.attributes(*attributes) #:nodoc:
+      options = attributes.last.is_a?(Hash) ? attributes.pop : {}
+      type = options[:type]
+
       with_api_attributes(*attributes) do |ruby_method, api_key|
+        attribute_types[api_key] = type
         define_method(ruby_method) do
           # For attributes which expose only a representation we support lazy loading
           result = @parameters[api_key]
@@ -88,7 +96,39 @@ module CI
     end
 
     class << self
-      alias :json_create :new
+      # Instantiate from the Hash resulting from the JSON parse,
+      #
+      # (This will use the special __REPRESENTATION__ attribute returned by the API to cache the instance's 'path_components', which is something we need to do
+      #  in the case where a __CLASS__ and a __REPRESENTATION__ are supplied but there aren't sufficient attributes supplied to generate the URL
+      #  path for the object ourself.)
+      def json_create(parameters)
+        parameters.delete('__CLASS__')
+        representation = parameters.delete('__REPRESENTATION__')
+        path_components = representation && representation.sub(/^\//,'').split('/')
+
+        ruby_params = {}
+        parameters.each do |k, v|
+          ruby_params[k] = case attribute_types[k]
+          when :date
+            Date.parse(v) if v && !v.empty?
+          when :duration
+            # http://en.wikipedia.org/wiki/ISO_8601#Durations  PT00H00M00S format
+            # we expose this as an integer number of seconds
+            v =~ /^PT(\d\d)H(\d\d)M(\d\d)S$/i and $1.to_i*3600 + $2.to_i*60 + $3.to_i
+          when :release_array
+            (v || []).map do |h|
+              Metadata::Release.new(:upc => h["__REPRESENTATION__"][/(\d+)$/])
+            end
+          else
+            v
+          end
+        end
+
+        result = new
+        result.instance_variable_set(:@parameters, ruby_params)
+        result.instance_variable_set(:@path_components, path_components)
+        result
+      end
 
       # Call to fetch an asset from the database. You need to specify the attributes necessary to identify the object, as required by your
       # overriden version of CI::Asset.path_components to generate a URL path for the object.
@@ -104,22 +144,10 @@ module CI
       end
     end
 
-    # this can be used to create a new instance of an asset, either directly from the Hash resulting from the JSON parse,
-    # or from a user-supplied attribute hash.
-    # (This will use the special __REPRESENTATION__ attribute returned by the API to cache the instance's 'path_components', which is something we need to do
-    #  in the case where a __CLASS__ and a __REPRESENTATION__ are supplied but there aren't sufficient attributes supplied to generate the URL
-    #  path for the object ourself.)
-    def initialize(parameters = {})
+    # this can be used to create a new instance of an asset from a user-supplied attribute hash.
+    def initialize(parameters = {}, path_components = nil)
       @parameters = {}
-      parameters.delete('__CLASS__')
-
-      representation = parameters.delete('__REPRESENTATION__')
-      @path_components = representation.sub(/^\//,'').split('/') if representation
-
-      parameters.each do |k, v|
-        setter = self.class.make_ci_method_name(k) << '='
-        send(setter, v) if respond_to?(setter)
-      end
+      parameters.each {|k,v| send(:"#{k}=", v)}
     end
 
     # this returns an array of strings consisting of the path components for the canonical URL for this asset/resource.
@@ -139,11 +167,15 @@ module CI
     def to_json(*a)
       result = {'__CLASS__' => self.class.name.sub(/CI::/i, 'MFS::')}
       parameters.each do |k,v|
-        result[k] = case v
-        # the CI API needs 0/1 instead of the normal json true/false. apparently.
-        when true then 1
-        when false then 0
-        else v
+        result[k] = case self.class.attribute_types[k]
+        when :date
+          v && v.to_s
+        when :duration
+          mins, secs = v.divmod(60)
+          hours, mins = mins.divmod(60)
+          sprintf("PT%02dH%02dM%02dS", hours, mins, secs)
+        else
+          v
         end
       end
       result.to_json(*a)

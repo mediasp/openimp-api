@@ -5,6 +5,7 @@ rescue LoadError
   raise LoadError, "You need to install either the json or json-jruby gem, as appropriate"
 end
 require 'uri'
+require 'date'
 require 'net/http'
 require 'net/https'
 require 'singleton'

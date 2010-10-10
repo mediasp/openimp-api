@@ -6,7 +6,8 @@ module CI
       attributes    :ReferenceTitle, :SubTitle, :Duration
       attributes    :MainArtist, :DisplayArtist
       attributes    :PLineYear, :PLineText, :CLineYear, :CLineText, :imagefrontcover
-      attributes    :TrackCount, :ReleaseDate, :external_identifiers
+      attributes    :TrackCount, :external_identifiers
+      attributes :ReleaseDate, :type => :date
 
       collections   :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres, :offers
 
