@@ -151,7 +151,6 @@ module CI
             JSON.create_id = '__CLASS__'
 
             begin
-              puts response.body
               JSON.parse(response.body)
             ensure
               Object.send(:remove_const, :MFS)
@@ -167,6 +166,7 @@ module CI
   end
 end
 
+require 'ci/version'
 require 'ci/assets'
 require 'ci/files'
 require 'ci/pager'

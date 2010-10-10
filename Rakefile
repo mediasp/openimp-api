@@ -2,7 +2,10 @@ require 'rubygems'
 require 'rake'
 require 'rake/testtask'
 require 'rake/rdoctask'
-require 'rake/gempackagetask'
+
+lib = File.expand_path('../lib/', __FILE__)
+$:.unshift lib unless $:.include?(lib)
+require 'ci/version'
 
 Rake::TestTask.new do |t|
   t.verbose = true
@@ -12,21 +15,9 @@ Rake::RDocTask.new do |t|
   t.rdoc_dir = 'rdoc'
 end
 
-spec = Gem::Specification.new do |s|
-  s.name = "ci-api"
-  s.version = "0.1.6"
-  s.authors = ["Media Service Provider Ltd", "Tim Cowlishaw", "Eleanor McHugh"]
-  s.email = "help@playlouder.com"
-  s.homepage = "http://dev.playlouder.com"
-  s.platform = Gem::Platform::RUBY
-  s.summary = "A client library for Consolidated Independent's (http://ci-info.com) Media Fulfilment API"
-  s.files = FileList["{doc,lib,test}/**/*"].to_a
-  s.require_path = 'lib'
-  s.test_files = FileList["test/**/test_*.rb"].to_a - ['test/test_helper.rb']
-  s.has_rdoc = false
+desc 'build a gem release and push it to dev'
+task :release do
+  sh 'gem build ci-api.gemspec'
+  sh "scp ci-api-#{CI::VERSION}.gem dev.playlouder.com:/var/www/gems.playlouder.com/pending"
+  sh "ssh dev.playlouder.com sudo include_gems.sh /var/www/gems.playlouder.com/pending"
 end
-
-Rake::GemPackageTask.new(spec) do |pkg|
-  pkg.need_tar = true
-end
-

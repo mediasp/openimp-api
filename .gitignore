@@ -1,3 +1,4 @@
 rdoc
 pkg
 test/config.yml
+*.gem
