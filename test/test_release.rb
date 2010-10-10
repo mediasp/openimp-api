@@ -12,6 +12,9 @@ class TestRelease < Test::Unit::TestCase
     assert_instance_of CI::Metadata::Recording, tracks.first.recording
     assert_instance_of Fixnum, tracks.first.recording.duration
 
+    assert_instance_of Hash, tracks.first.recording.external_identifiers
+    assert_instance_of Hash, release.external_identifiers
+
     assert_instance_of Array, release.offers
     assert !release.offers.empty?
     assert !tracks.first.offers.empty?
