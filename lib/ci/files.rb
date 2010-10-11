@@ -4,8 +4,8 @@ require 'pathname'
 module CI
   # A +FileToken+ is used to control access to a file stored on the server.
   class FileToken < Asset
-    attributes    :Id, :URL, :PlayURL, :RedirectWhenExpiredUrl, :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
-    attributes    :file
+    attributes :Id, :URL, :PlayURL, :RedirectWhenExpiredUrl, :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
+    attributes :file
 
     def self.path_components(instance=nil)
       if instance

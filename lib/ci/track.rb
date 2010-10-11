@@ -1,11 +1,11 @@
 module CI
   module Metadata
     class Track < Asset
-      attributes    :ReferenceTitle, :SubTitle, :DisplayArtist, :ParentalWarningType
-      attributes    :PLineYear, :PLineText, :CLineYear, :CLineText
-      attributes    :SequenceNumber, :VolumeNumber, :TrackNumber
-      attributes    :recording, :release
-      collections   :files, :Genres, :SubGenres, :offers
+      attributes :ReferenceTitle, :SubTitle, :DisplayArtist, :ParentalWarningType
+      attributes :PLineYear, :PLineText, :CLineYear, :CLineText
+      attributes :SequenceNumber, :VolumeNumber, :TrackNumber
+      attributes :recording, :release
+      collections :files, :Genres, :SubGenres, :offers
       #TODO getter and setter for files array, recording, release
       #TODO better way of doing inter-class associations.
 
