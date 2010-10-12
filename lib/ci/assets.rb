@@ -232,7 +232,6 @@ module CI
     # An +Encoding+ describes the audio codec associated with a server-side audio file.
     class Encoding < Asset
       attributes    :Name, :Codec, :Family, :PreviewLength, :Channels, :Bitrate, :Description
-      @@encodings = nil
 
       def self.path_components(instance=nil)
         if instance
@@ -242,12 +241,26 @@ module CI
         end
       end
 
-      def self.synchronize
-        @@encodings = MediaFileServer.get(path_components)
+      def self.list
+        MediaFileServer.get(path_components)
       end
 
-      def self.encodings
-        @@encodings.dup rescue nil
+      @@encodings = nil
+      def self.cache_encodings!
+        @@encodings ||= begin
+          encodings = {}
+          list.each {|e| encodings['/'+e.path_components.join('/')] = e}
+          encodings
+        end
+      end
+
+      # Overridden to fetch from our local cache where available.
+      def self.json_create(parameters)
+        if @@encodings
+          @@encodings[parameters['__REPRESENTATION__']]
+        else
+          super
+        end
       end
     end
   end

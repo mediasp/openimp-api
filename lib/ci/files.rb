@@ -118,8 +118,8 @@ module CI
 
   protected
     def replace_with! file
-      @content = file.content
-      @file_name = file.file_name
+      @content = file.instance_variable_get(:@content)
+      @file_name = file.instance_variable_get(:@file_name)
       super
     end
   end

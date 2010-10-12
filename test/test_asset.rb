@@ -2,12 +2,9 @@ require 'test/common'
 
 class TestAsset < Test::Unit::TestCase
   def test_list_encodings
-    assert_nil CI::Metadata::Encoding.encodings
-    CI::Metadata::Encoding.synchronize
-    assert_not_nil CI::Metadata::Encoding.encodings
-    encoding = CI::Metadata::Encoding.new(:name => 'wma_192')
-    assert_instance_of CI::Metadata::Encoding, encoding
-    assert_equal encoding.name, 'wma_192'
+    list = CI::Metadata::Encoding.list
+    assert !list.empty?
+    assert_instance_of CI::Metadata::Encoding, list.first
   end
 
   def test_equality_and_lack_thereof
