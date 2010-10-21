@@ -33,6 +33,8 @@ module CI
       @host       = options[:host]      || 'api.cissme.com'
       @port       = options[:port]      || {:https => 443, :http => 80}[@protocol]
       @base_path  = options[:base_path] || '/media/v1'
+      @open_timeout = options[:open_timeout]
+      @read_timeout = options[:read_timeout]
     end
 
     def path(path_components)
@@ -111,6 +113,8 @@ module CI
   private
     def start_http_connection(&block)
       connection = Net::HTTP.new(@host, @port)
+      connection.open_timeout = @open_timeout if @open_timeout
+      connection.read_timeout = @read_timeout if @read_timeout
       if @protocol == :https then
         connection.use_ssl = true
         connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
