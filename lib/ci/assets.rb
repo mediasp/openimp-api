@@ -111,6 +111,8 @@ module CI
           ruby_params[k] = case attribute_types[k]
           when :date
             Date.parse(v) if v && !v.empty?
+          when :datetime
+            Time.iso8601(v) if v && !v.empty?
           when :duration
             # http://en.wikipedia.org/wiki/ISO_8601#Durations  PT00H00M00S format
             # we expose this as an integer number of seconds
@@ -170,6 +172,8 @@ module CI
         result[k] = case self.class.attribute_types[k]
         when :date
           v && v.to_s
+        when :datetime
+          v && v.iso8601
         when :duration
           mins, secs = v.divmod(60)
           hours, mins = mins.divmod(60)

@@ -6,6 +6,7 @@ rescue LoadError
 end
 require 'uri'
 require 'date'
+require 'time'
 require 'net/http'
 require 'net/https'
 require 'singleton'
