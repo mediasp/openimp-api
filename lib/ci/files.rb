@@ -135,7 +135,7 @@ module CI
     attributes    :width, :height
 
     RESIZE_METHODS = [ 'NOMODIFIER', 'EXACT', 'SQUARE', 'SMALLER', 'LARGER' ]
-    RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif' }
+    RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif', 'bmp' => 'bmp' }
 
     def resize(width, height, mode = :NOMODIFIER, properties = {})
       MediaFileServer.post(path_components('contextualmethod', 'Resize'), properties.merge(:targetX => width, :targetY => height, :resizeType => "IMAGE_RESIZE_#{mode}", :Synchronous => 1))
