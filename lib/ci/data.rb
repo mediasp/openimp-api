@@ -28,7 +28,7 @@ module CI
 
       class Terms < Asset
         attributes :Began, :Ended, :PreOrderReleaseDate, :type => :date
-        attributes :PriceRangeType
+        attributes :Price
         collections :Countries
       end
     end

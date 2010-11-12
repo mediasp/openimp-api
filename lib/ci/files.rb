@@ -127,6 +127,7 @@ module CI
 
   class File::Audio < File
     attributes    :BitRate, :encoding
+    attributes    :Duration, :type => :duration
     collections   :tracks
   end
 
