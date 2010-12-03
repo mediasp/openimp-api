@@ -1,22 +1,23 @@
 module CI
   module Data
 
-    class ImportRequest < Asset
-      attributes :Id, :name, :OrganisationName
+    class ReleaseBatch < Asset
+      attributes :Id, :name, :OrganisationName, :OrganisationDPID, :OrganisationId
       attributes :releases_completed, :releases_incomplete, :type => :release_array
       attributes :Status
-      attributes :OrganisationDPID, :OrganisationId
 
-      def self.path_components(instance=nil)
-        instance ? ['import', instance.id] : ['import']
+      def self.list
+        MediaFileServer.get(path_components)
       end
     end
 
-    class Delivery < Asset
-      attributes :Id, :name, :OrganisationName
-      attributes :releases_completed, :releases_incomplete, :type => :release_array
-      attributes :status
+    class ImportRequest < ReleaseBatch
+      def self.path_components(instance=nil)
+        instance ? ['import', 'by_id', instance.id] : ['import']
+      end
+    end
 
+    class Delivery < ReleaseBatch
       def self.path_components(instance=nil)
         instance ? ['delivery', instance.id] : ['delivery', 'to_me']
       end
