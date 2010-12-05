@@ -12,9 +12,9 @@ class TestFilestore < Test::Unit::TestCase
     file
   end
 
-  def store_image_file
+  def store_image_file(as_class=CI::File::Image)
     if !@image_id then
-      file = CI::File.disk_file(TEST_IMAGE_FILE, "image/jpeg")
+      file = as_class.disk_file(TEST_IMAGE_FILE, "image/jpeg")
       file.store!
       @image_id = file.id
       @image_data = file.content
@@ -81,11 +81,12 @@ class TestFilestore < Test::Unit::TestCase
   end
 
   def test_image_file_handling
-    store_image_file
+    store_image_file(CI::File)
     file = CI::File.find(:id => @image_id)
     assert_instance_of CI::File, file
     file = file.sub_type("image/jpeg")
     assert_instance_of CI::File::Image, file
+    assert_instance_of Fixnum, file.width
 
     contextual_methods = file.contextual_methods
     assert_instance_of Array, contextual_methods
@@ -100,6 +101,11 @@ class TestFilestore < Test::Unit::TestCase
     assert_not_equal digest, file.sha1_digest_base64
   end
 
+  def test_direct_uploaded_image
+    uploaded_as_image = store_image_file(CI::File::Image)
+    assert_instance_of Fixnum, uploaded_as_image.width
+  end
+
   def xtest_filestore_list
     list = CI::File.list
     assert_instance_of CI::Pager, list
@@ -110,3 +116,4 @@ class TestFilestore < Test::Unit::TestCase
     end
   end
 end
+

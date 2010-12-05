@@ -91,9 +91,14 @@ module CI
       multipart_post do
         [ "Content-Disposition: form-data; name=\"file\"; filename=\"#{file_name.basename rescue "null"}\"\r\nContent-Type: #{mime_type}\r\n\r\n#{content}",
           "Content-Disposition: form-data; name=\"MimeMajor\"\r\n\r\n#{mime_major}",
-          "Content-Disposition: form-data; name=\"MimeMinor\"\r\n\r\n#{mime_minor}"
+          "Content-Disposition: form-data; name=\"MimeMinor\"\r\n\r\n#{mime_minor}",
+          "Content-Disposition: form-data; name=\"FileClass\"\r\n\r\n#{self.class.mfs_class_name}"
           ]
       end
+    end
+
+    def self.mfs_class_name
+      name.sub(/^CI/, 'MFS')
     end
 
     def store!
@@ -113,7 +118,12 @@ module CI
     end
 
     def sub_type(mime_type)
-      post({ :NewType => "MFS::File::#{/\//.match(mime_type).pre_match.capitalize}" }, 'becomesubtype')
+      new_class = case mime_type.split('/').first
+      when 'image' then Image
+      when 'audio' then Audio
+      else File
+      end
+      post({ :NewType => new_class.mfs_class_name }, 'becomesubtype')
     end
 
   protected
@@ -150,3 +160,4 @@ module CI
   class File::Video < File
   end
 end
+
