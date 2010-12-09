@@ -18,6 +18,9 @@ module CI
         end
       end
 
+      # "GRiD" doesn't auto-camel-case very nicely
+      def grid; @parameters[:GRiD]; end
+
       module ParentalWarning
         EXPLICIT                = 'Explicit'
         NO_ADVICE_AVAILABLE     = 'NoAdviceAvailable'
