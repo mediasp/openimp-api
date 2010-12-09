@@ -19,7 +19,7 @@ module CI
       end
 
       # "GRiD" doesn't auto-camel-case very nicely
-      def grid; @parameters[:GRiD]; end
+      def grid; @parameters['GRiD']; end
 
       module ParentalWarning
         EXPLICIT                = 'Explicit'

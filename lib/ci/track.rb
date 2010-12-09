@@ -9,6 +9,9 @@ module CI
       #TODO getter and setter for files array, recording, release
       #TODO better way of doing inter-class associations.
 
+      # "GRiD" doesn't auto-camel-case very nicely
+      def grid; @parameters['GRiD']; end
+
       def self.path_components(instance=nil)
         if instance && instance.release && instance.sequence_number
           instance.release.path_components + ['track', instance.sequence_number]
