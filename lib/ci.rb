@@ -7,6 +7,7 @@ end
 require 'uri'
 require 'date'
 require 'time'
+require 'cgi'
 require 'net/http'
 require 'net/https'
 require 'singleton'
@@ -43,7 +44,12 @@ module CI
     end
 
     def get(path_components, options={})
-      json_query(path(path_components)) { |url, p| Net::HTTP::Get.new(url) }
+      path = path(path_components)
+      query = options[:query] and begin
+        path << '?'
+        path << query.map {|k,v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}"}.join("&")
+      end
+      json_query(path) { |url, p| Net::HTTP::Get.new(url) }
     end
 
     def get_octet_stream(path_components)

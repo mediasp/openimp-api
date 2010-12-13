@@ -9,6 +9,10 @@ module CI
       def self.list
         MediaFileServer.get(path_components)
       end
+
+      def self.list_by_status(status)
+        MediaFileServer.get(path_components, :query => {:status => status})
+      end
     end
 
     class ImportRequest < ReleaseBatch
