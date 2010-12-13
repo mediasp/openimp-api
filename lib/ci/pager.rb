@@ -8,8 +8,11 @@ module CI
       alias :json_create :new
     end
 
+    attr_reader :pages, :total_items
+
     def initialize(json_data)
       @pages = json_data['Pages']
+      @total_items = json_data['NumberOfEntries']
     end
 
     include Enumerable
@@ -17,6 +20,7 @@ module CI
     def each
       @pages.length.times {|n| yield self[n]}
     end
+    alias :each_page :each
 
     def [] n
       path = @pages[n]
@@ -27,6 +31,35 @@ module CI
 
     def length
       @pages.length
+    end
+
+    # An enumerable collection of all the items within the pages of the pager.
+    # Allows you to forget that they're paginated altogether. Takes care of
+    # reloading the items (which are typically have only a URL and class on them
+    # in the pager page listing) before yielding them to you.
+    # Has a length corresponding to the NumberOfEntries from the pager.
+    def items
+      Items.new(self)
+    end
+
+    class Items
+      def initialize(pager)
+        @pager = pager
+      end
+
+      include Enumerable
+
+      def each(&block)
+        @pager.each do |page|
+          page.each do |item|
+            yield item.reload!
+          end
+        end
+      end
+
+      def length
+        @pager.total_items
+      end
     end
   end
 end
