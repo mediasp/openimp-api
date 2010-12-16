@@ -22,6 +22,11 @@ module CI
     end
     alias :each_page :each
 
+    def reverse_each
+      (@pages.length-1).downto(0) {|n| yield self[n]}
+    end
+    alias :reverse_each_page :reverse_each
+
     def [] n
       path = @pages[n]
       path_components = path.sub!(/^\//,'').split('/')
@@ -49,9 +54,17 @@ module CI
 
       include Enumerable
 
-      def each(&block)
+      def each
         @pager.each do |page|
           page.each do |item|
+            yield item.reload!
+          end
+        end
+      end
+
+      def reverse_each
+        @pager.reverse_each do |page|
+          page.reverse_each do |item|
             yield item.reload!
           end
         end
