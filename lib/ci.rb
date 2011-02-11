@@ -14,11 +14,11 @@ require 'singleton'
 
 #Your username and password for the CI api should be set with:
 #* CI::MediaFileServer.configure 'username', 'password'
-#
-#More details about all the properties of each Class of object are available at https://mfs.ci-support.com/v1/docs
 
 module CI
-  # The +MediaFileServer+ uses a _singleton_ to wrap all access to the CI server into a single instance.
+  # TODO: get rid of the singleton here. If we're gonna do this as global state then
+  # why not just put it directly on the CI module. Or if we want to avoid global state,
+  # then a singleton is no use anyway.
   class MediaFileServer
     include Singleton
 
@@ -144,37 +144,47 @@ module CI
         when Net::HTTPClientError, Net::HTTPServerError
           raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
         else
-          # This is a monstous hack to automatically have the JSON parser construct classes
-          # corresponding to the class names in the __CLASS__ attributes in the JSON, /except/
-          # using 'CI' as the namespace rather than (variously) 'MFS' or 'MediaAPI' as they do.
-          #
-          # Suffice to say it's not threadsafe, or rather it is but only thanks to the 'Thread.exclusive'
-          Thread.exclusive do
-            old_mfs = (Object.const_get(:MFS) rescue nil)
-            Object.send(:remove_const, :MFS) if old_mfs
-            Object.const_set(:MFS, CI)
+          parse_json(response.body)
+        end
+      end
+    end
 
-            old_media_api = (Object.const_get(:MediaAPI) rescue nil)
-            Object.send(:remove_const, :MediaAPI) if old_media_api
-            Object.const_set(:MediaAPI, CI)
+    # This is a monstous hack to automatically have the JSON parser construct classes
+    # corresponding to the class names in the __CLASS__ attributes in the JSON, /except/
+    # using 'CI' as the namespace rather than (variously) 'MFS' or 'MediaAPI' as they do.
+    #
+    # Suffice to say it's not threadsafe, or rather it is but only thanks to the 'Thread.exclusive'
+    def parse_json(json)
+      Thread.exclusive do
+        old_mfs = (Object.const_get(:MFS) rescue nil)
+        Object.send(:remove_const, :MFS) if old_mfs
+        Object.const_set(:MFS, CI)
 
-            old_json_create_id = JSON.create_id
-            JSON.create_id = '__CLASS__'
+        old_media_api = (Object.const_get(:MediaAPI) rescue nil)
+        Object.send(:remove_const, :MediaAPI) if old_media_api
+        Object.const_set(:MediaAPI, CI)
 
-            begin
-              JSON.parse(response.body)
-            ensure
-              Object.send(:remove_const, :MFS)
-              Object.const_set(:MFS, old_mfs) if old_mfs
-              Object.send(:remove_const, :MediaAPI)
-              Object.const_set(:MediaAPI, old_media_api) if old_media_api
-              JSON.create_id = old_json_create_id
-            end
-          end
+        old_json_create_id = JSON.create_id
+        JSON.create_id = '__CLASS__'
+
+        begin
+          JSON.parse(json)
+        ensure
+          Object.send(:remove_const, :MFS)
+          Object.const_set(:MFS, old_mfs) if old_mfs
+          Object.send(:remove_const, :MediaAPI)
+          Object.const_set(:MediaAPI, old_media_api) if old_media_api
+          JSON.create_id = old_json_create_id
         end
       end
     end
   end
+
+  # This is useful to expose for (eg) integration tests that want to load fixtures from json without hitting the API
+  def self.parse_json(json)
+    MediaFileServer.instance.send(:parse_json, json)
+  end
+
 end
 
 require 'ci/version'
