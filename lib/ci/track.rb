@@ -11,6 +11,7 @@ module CI
 
       # "GRiD" doesn't auto-camel-case very nicely
       def grid; @parameters['GRiD']; end
+      def grid=(grid); @parameters['GRiD'] = grid; end
 
       def self.path_components(instance=nil)
         if instance && instance.release && instance.sequence_number
