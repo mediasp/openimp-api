@@ -81,10 +81,8 @@ class TestFilestore < Test::Unit::TestCase
   end
 
   def test_image_file_handling
-    store_image_file(CI::File)
+    store_image_file(CI::File::Image)
     file = CI::File.find(:id => @image_id)
-    assert_instance_of CI::File, file
-    file = file.sub_type("image/jpeg")
     assert_instance_of CI::File::Image, file
     assert_instance_of Fixnum, file.width
 

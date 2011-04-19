@@ -117,14 +117,17 @@ module CI
       @contextual_methods ||= get('contextualmethod')
     end
 
-    def sub_type(mime_type)
-      new_class = case mime_type.split('/').first
-      when 'image' then Image
-      when 'audio' then Audio
-      else File
-      end
-      post({ :NewType => new_class.mfs_class_name }, 'becomesubtype')
-    end
+    # Disable this method as it has proven to cause latency issues. CI promised to
+    # fix it by adding a DB index, but avoid for now. CI::Files should now be created
+    # with the correct subtype by default already.
+    # def sub_type(mime_type)
+    #   new_class = case mime_type.split('/').first
+    #   when 'image' then Image
+    #   when 'audio' then Audio
+    #   else File
+    #   end
+    #   post({ :NewType => new_class.mfs_class_name }, 'becomesubtype')
+    # end
 
   protected
     def replace_with! file
