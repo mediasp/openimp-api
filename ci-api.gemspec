@@ -14,6 +14,7 @@ spec = Gem::Specification.new do |s|
   s.summary = "A client library for Consolidated Independent's (http://ci-info.com) Media Fulfilment API"
   s.files = Dir.glob("{lib,test}/**/*")
   s.require_path = 'lib'
+  s.add_development_dependency('rake')
   s.test_files = Dir.glob("test/**/test_*.rb")
   s.has_rdoc = false
 end
