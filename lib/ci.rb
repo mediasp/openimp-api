@@ -117,6 +117,24 @@ module CI
       json_query(path(path_components)) { |url, p| Net::HTTP::Delete.new(url) }
     end
 
+    def base_uri
+      @base_uri ||= begin
+        klass = {:http => URI::HTTP, :https => URI::HTTPS}[@protocol]
+        user = URI.escape(@username, /[^-_.!~*'()a-zA-Z\d;\/?&=+$,\[\]]/n) #URI::REGEXP::UNSAFE but disallowing @ and :
+        pass = URI.escape(@password, /[^-_.!~*'()a-zA-Z\d;\/?&=+$,\[\]]/n)
+        klass.build(:host => @host, :port => @port, :userinfo => "#{user}:#{pass}")
+      end
+    end
+
+    # way to get a URI object for some particular path_components, allowing you to override the base
+    # (protocol / host / port, but not path) of the uri from the globally-configured default, if you
+    # so desire.
+    # TODO: sort out once and for all the messy URI handling in this library, and stop it relying on
+    # global config.
+    def uri_for(path_components, override_base_uri=nil)
+      (override_base_uri || base_uri).merge(path(path_components))
+    end
+
   private
     def start_http_connection(&block)
       connection = Net::HTTP.new(@host, @port)

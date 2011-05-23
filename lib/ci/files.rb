@@ -77,6 +77,10 @@ module CI
       @content ||= retrieve_content
     end
 
+    def content_uri(override_base_uri=nil)
+      MediaFileServer.uri_for(path_components << 'retrieve', override_base_uri)
+    end
+
     def file_name=(name)
       @file_name = (Pathname.new(name.to_s) rescue name)
     end

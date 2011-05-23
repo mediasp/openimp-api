@@ -152,6 +152,10 @@ module CI
       parameters.each {|k,v| send(:"#{k}=", v)}
     end
 
+    def uri(override_base_uri=nil)
+      MediaFileServer.uri_for(path_components, override_base_uri)
+    end
+
     # this returns an array of strings consisting of the path components for the canonical URL for this asset/resource.
     # as a convenience, you can pass additional path components as arguments and it'll tack them on the end.
     # note that objects are compared for identity by comparing these; also note that sometimes, the value of this method is obtained from the
