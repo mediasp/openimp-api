@@ -52,19 +52,15 @@ module CI
       json_query(path) { |url, p| Net::HTTP::Get.new(url) }
     end
 
-    def get_octet_stream(path_components)
-      start_http_connection do |connection|
+    def get_octet_stream(path_components, overrides={})
+      start_http_connection(overrides) do |connection|
         request = Net::HTTP::Get.new(path(path_components))
-        request['accept'] = 'application/json'
         request.basic_auth(@username, @password)
-        case response = connection.request(request)
-        when nil
-          raise "No response received!"
-        when Net::HTTPClientError, Net::HTTPServerError
-          raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
-        else
-          response.body
+        response = connection.request(request) do |response|
+          raise "Bad HTTP response from CI: #{response.class}" unless Net::HTTPSuccess === response
+          yield response if block_given?
         end
+        response.body
       end
     end
 
@@ -136,11 +132,11 @@ module CI
     end
 
   private
-    def start_http_connection(&block)
-      connection = Net::HTTP.new(@host, @port)
+    def start_http_connection(overrides={}, &block)
+      connection = Net::HTTP.new(overrides[:host] || @host, overrides[:port] || @port)
       connection.open_timeout = @open_timeout if @open_timeout
       connection.read_timeout = @read_timeout if @read_timeout
-      if @protocol == :https then
+      if (overrides[:protocol] || @protocol) == :https then
         connection.use_ssl = true
         connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end

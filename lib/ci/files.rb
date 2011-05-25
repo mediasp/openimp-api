@@ -77,17 +77,23 @@ module CI
       @content ||= retrieve_content
     end
 
-    def content_uri(override_base_uri=nil)
-      MediaFileServer.uri_for(path_components << 'retrieve', override_base_uri)
+    # Preferred way to download bigger files - avoids bringing the whole file into
+    # memory at once.
+    def download_to_file(filename, overrides={})
+      ::File.open(filename, 'wb') do |file|
+        MediaFileServer.get_octet_stream(path_components('retrieve'), overrides) do |response|
+          response.read_body {|segment| file << segment}
+        end
+      end
     end
 
     def file_name=(name)
       @file_name = (Pathname.new(name.to_s) rescue name)
     end
 
-    # Retrieve the data content associated with this file
-    def retrieve_content
-      @content = get_octet_stream('retrieve')
+    # Retrieve the data content associated with this file.
+    def retrieve_content(overrides={})
+      MediaFileServer.get_octet_stream(path_components('retrieve'), overrides)
     end
 
     # Performs an +MFS::File::Request::Store+ operation on the server, creating a new file.

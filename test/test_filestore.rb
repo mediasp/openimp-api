@@ -1,5 +1,6 @@
 require 'test/common'
 require 'open-uri'
+require 'tempfile'
 
 class TestFilestore < Test::Unit::TestCase
   def store_text_file
@@ -46,6 +47,10 @@ class TestFilestore < Test::Unit::TestCase
     file.content = nil
     file.retrieve_content
     assert_equal file.content, original_data
+
+    filename = Tempfile.new('ci-file-test').path
+    file.download_to_file(filename)
+    assert_equal File.read(filename), File.read(TEST_TEXT_FILE)
   end
 
   def test_find_file

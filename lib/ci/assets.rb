@@ -192,7 +192,7 @@ module CI
     # in all these methods, MediaFileServer takes a list of path components, and handles generating the URL from these itself.
     # (this is because of the possible presence of extra path components which depend on the API endpoint URL - eg /v1/ )
 
-    [:get, :get_octet_stream, :head, :delete].each do |m|
+    [:get, :head, :delete].each do |m|
       class_eval <<-METHOD
         def #{m} action = nil
           MediaFileServer.#{m}(path_components(action))
