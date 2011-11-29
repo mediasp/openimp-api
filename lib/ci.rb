@@ -11,6 +11,7 @@ require 'cgi'
 require 'net/http'
 require 'net/https'
 require 'singleton'
+require 'thread' # for Thread.exclusive
 
 #Your username and password for the CI api should be set with:
 #* CI::MediaFileServer.configure 'username', 'password'
