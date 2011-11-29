@@ -8,11 +8,31 @@ module CI
       attributes :TrackCount, :external_identifiers
       attributes :ReleaseDate, :type => :date
 
+      # this is a bit of a pseudo attribute.
+      # Releases do exist against an organisation, but this information is not
+      # included in the api and it is not simple to infer this information as
+      # the canonical uri for the release doesn't include the organisation id
+      # (yet)
+      # This is here solely so that you can call
+      # Release.find(:organisation_id => 'asdfasdf', :upc => '123123')
+      attr_accessor :organisation_id
+
       collections :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres, :offers
 
       def self.path_components(instance=nil)
         if instance
-          ['release', 'upc', instance.upc] if instance.upc
+          if instance.upc
+            cmps = ['release', 'upc', instance.upc]
+
+            # If supplied, we can narrow the search by organisation to
+            # avoid UPC clashes - API behaviour for clashes is as yet
+            # undefined, and we can expect other changes
+            if instance.organisation_id
+              ['licensor', instance.organisation_id] + cmps
+            else
+              cmps
+            end
+          end
         else
           ['release']
         end

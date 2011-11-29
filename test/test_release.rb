@@ -29,6 +29,13 @@ class TestRelease < Test::Unit::TestCase
     end
   end
 
+  def test_lookup_by_organisation
+    release = CI::Metadata::Release.find(:upc => TEST_UPC,
+      :organisation_id => TEST_ORGANISATION_ID)
+
+    assert_instance_of CI::Metadata::Release, release
+  end
+
   def test_get_front_cover_for_release
     release = CI::Metadata::Release.find(:upc => TEST_UPC)
     assert_instance_of CI::Metadata::Release, release

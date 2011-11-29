@@ -4,3 +4,5 @@
 :password: bar
 # A UPC which exists in the CI API account above
 :test_upc: "0123456789012"
+# An organisation_id that exists in the CI API and that owns the UPC above
+:test_organisation_id: "3704196910016"
