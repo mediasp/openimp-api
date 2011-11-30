@@ -165,13 +165,13 @@ module CI
           log :warn, "No response received"
           raise "No response received!"
         when Net::HTTPClientError, Net::HTTPServerError
-          log_http_response(start_time, response)
+          log_http_response(start_time, request, response)
 
           http_error = Net::HTTPResponse::CODE_TO_OBJ.
             find { |k, v| v == response.class }[0]
           raise "HTTP ERROR #{http_error}: #{response.body}"
         else
-          log_http_response(start_time, response)
+          log_http_response(start_time, request, response)
           parse_json(response.body)
         end
       end
@@ -221,11 +221,11 @@ module CI
       end
     end
 
-    def log_http_response(start_time, response)
+    def log_http_response(start_time, request, response)
       took_secs = Time.now - start_time
       # anything below http 400 is not an error
       level = response.code.to_i < 400 ? :info : :warn
-      log level,   "Finished request with HTTP #{response.code} in #{took_secs}secs"
+      log level,   "Finished request: #{request.method} #{request.path} #{response.code} #{took_secs}"
 
       return unless log_debug?
 
