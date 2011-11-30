@@ -36,6 +36,7 @@ module CI
       @host       = options[:host]      || 'api.cissme.com'
       @port       = options[:port]      || {:https => 443, :http => 80}[@protocol]
       @base_path  = options[:base_path] || '/media/v1'
+      @logger     = options[:logger]
       @open_timeout = options[:open_timeout]
       @read_timeout = options[:read_timeout]
     end
@@ -78,7 +79,8 @@ module CI
         }
     end
 
-    MIME_DELIMITER_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'()+_-./:=?" # "," RFC valid character but not supported by MFS parser
+    MIME_DELIMITER_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ()+_-./:=?'" # "," RFC valid character but not supported by MFS parser
+
     def create_mime_delimiter(length = 30)
       srand; result = ''; raise 'too long' if length > 70
       random_range = MIME_DELIMITER_CHARS.length
@@ -149,16 +151,27 @@ module CI
     #
     # TODO: Improve error handling to be useful.
     def json_query(url, attributes = {}, payload = nil)
+      start_time = Time.now
+
       start_http_connection do |connection|
         request = yield(url, attributes, payload)
         request['Accept'] = 'application/json'
         request.basic_auth(@username, @password)
+
+        log_http_request(request, attributes, payload)
+
         case response = connection.request(request)
         when nil
+          log :warn, "No response received"
           raise "No response received!"
         when Net::HTTPClientError, Net::HTTPServerError
-          raise "HTTP ERROR #{Net::HTTPResponse::CODE_TO_OBJ.find { |k, v| v == response.class }[0]}: #{response.body}"
+          log_http_response(start_time, response)
+
+          http_error = Net::HTTPResponse::CODE_TO_OBJ.
+            find { |k, v| v == response.class }[0]
+          raise "HTTP ERROR #{http_error}: #{response.body}"
         else
+          log_http_response(start_time, response)
           parse_json(response.body)
         end
       end
@@ -193,6 +206,40 @@ module CI
         end
       end
     end
+
+    # dump out an http request on to the logger
+    def log_http_request(request, attributes, payload)
+      log :info,    "Starting request: #{request.method} #{request.path}"
+
+      return unless log_debug?
+
+      log :debug,   "  attributes : #{attributes.inspect}"
+      log :debug,   "  payload    : #{payload.inspect}"
+      log :debug,   "  headers    :"
+      request.each_header do |name, value|
+        log :debug, "    #{name}: #{value}"
+      end
+    end
+
+    def log_http_response(start_time, response)
+      took_secs = Time.now - start_time
+      # anything below http 400 is not an error
+      level = response.code.to_i < 400 ? :info : :warn
+      log level,   "Finished request with HTTP #{response.code} in #{took_secs}secs"
+
+      return unless log_debug?
+
+      log :debug,  "  #{response.body}"
+    end
+
+    def log(level, msg)
+      @logger and @logger.send(level, msg)
+    end
+
+    def log_debug?
+      @logger && @logger.debug?
+    end
+
   end
 
   # This is useful to expose for (eg) integration tests that want to load fixtures from json without hitting the API
