@@ -65,6 +65,19 @@ class TestFilestore < Test::Unit::TestCase
     assert_equal file.content, @text_data
   end
 
+  def test_find_audio_file
+    file = CI::File.find(:id => TEST_AUDIO_FILE)
+    assert_instance_of CI::File::Audio, file
+    assert_not_nil file.sha1_digest_base64
+    assert_not_nil file.mime_minor
+    assert_not_nil file.mime_major
+    assert_not_nil file.bit_rate
+    assert_instance_of Fixnum, file.duration
+    assert_instance_of Fixnum, file.crc32
+    assert_equal ['filestore', TEST_AUDIO_FILE.to_s], file.path_components
+    assert_equal file.id, TEST_AUDIO_FILE
+  end
+
   def test_get_token
     store_text_file
     file = CI::File.find(:id => @text_id)

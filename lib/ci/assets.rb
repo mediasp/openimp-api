@@ -116,7 +116,8 @@ module CI
           when :duration
             # http://en.wikipedia.org/wiki/ISO_8601#Durations  PT00H00M00S format
             # we expose this as an integer number of seconds
-            v =~ /^PT(\d\d)H(\d\d)M(\d\d)S$/i and $1.to_i*3600 + $2.to_i*60 + $3.to_i
+            # note: throw away any further precision (e.g. microseconds as seen on audio files)
+            v =~ /^PT(\d\d)H(\d\d)M(\d\d)(\.\d+)?S$/i and $1.to_i*3600 + $2.to_i*60 + $3.to_i
           when :release_array
             (v || []).map do |h|
               Metadata::Release.new(:upc => h["__REPRESENTATION__"][/(\d+)$/])
