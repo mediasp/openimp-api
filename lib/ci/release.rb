@@ -8,6 +8,10 @@ module CI
       attributes :TrackCount, :external_identifiers
       attributes :ReleaseDate, :type => :date
 
+      # ArtistAppearance
+      attributes :inferred_artist_identifiers
+      attributes :provided_artist_identifiers
+
       # this is a bit of a pseudo attribute.
       # Releases do exist against an organisation, but this information is not
       # included in the api and it is not simple to infer this information as

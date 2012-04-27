@@ -5,6 +5,7 @@ module CI
       collections :Producers, :Mixers, :Composers, :Lyricists, :FeaturedArtists, :Artists
       collections :Publishers, :tracks, :files
       attributes :Duration, :type => :duration
+      attributes :inferred_artist_identifiers
 
       def self.path_components(instance=nil)
         if instance
