@@ -102,7 +102,6 @@ module CI
       #  in the case where a __CLASS__ and a __REPRESENTATION__ are supplied but there aren't sufficient attributes supplied to generate the URL
       #  path for the object ourself.)
       def json_create(parameters)
-        parameters.delete('__CLASS__')
         representation = parameters.delete('__REPRESENTATION__')
         path_components = representation && representation.sub(/^\//,'').split('/')
 

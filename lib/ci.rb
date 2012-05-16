@@ -177,33 +177,69 @@ module CI
       end
     end
 
-    # This is a monstous hack to automatically have the JSON parser construct classes
-    # corresponding to the class names in the __CLASS__ attributes in the JSON, /except/
-    # using 'CI' as the namespace rather than (variously) 'MFS' or 'MediaAPI' as they do.
+    require 'ci/version'
+    require 'ci/assets'
+    require 'ci/files'
+    require 'ci/pager'
+    require 'ci/recording'
+    require 'ci/release'
+    require 'ci/track'
+    require 'ci/artist_appearance'
+    require 'ci/data'
+
+    # Classes must respond to .json_create.
+    # They will be passed a hash of json properties; any class instances within
+    # this property hash will already have been recursively instantiated.
     #
-    # Suffice to say it's not threadsafe, or rather it is but only thanks to the 'Thread.exclusive'
+    # Note we don't use the JSON library's inbuilt instantiation feature, as we
+    # want to use this restricted custom class mapping:
+    CLASS_MAPPING = {
+      'MFS::Metadata::ArtistAppearance' => CI::Metadata::ArtistAppearance,
+      'MFS::Metadata::Encoding'         => CI::Metadata::Encoding,
+      'MFS::Metadata::Recording'        => CI::Metadata::Recording,
+      'MFS::Metadata::Release'          => CI::Metadata::Release,
+      'MFS::Metadata::Track'            => CI::Metadata::Track,
+      'MFS::Pager'                      => CI::Pager,
+      'MFS::FileToken'                  => CI::FileToken,
+      'MFS::File'                       => CI::File,
+      'MFS::File::Image'                => CI::File::Image,
+      'MFS::File::Audio'                => CI::File::Audio,
+      'MFS::ContextualMethod'           => CI::ContextualMethod,
+      'MediaAPI::Data::ReleaseBatch'    => CI::Data::ReleaseBatch,
+      'MediaAPI::Data::ImportRequest'   => CI::Data::ImportRequest,
+      'MediaAPI::Data::Delivery'        => CI::Data::Delivery,
+      'MediaAPI::Data::Offer'           => CI::Data::Offer,
+      'MediaAPI::Data::Offer::Terms'    => CI::Data::Offer::Terms
+    }
+
     def parse_json(json)
-      Thread.exclusive do
-        old_mfs = (Object.const_get(:MFS) rescue nil)
-        Object.send(:remove_const, :MFS) if old_mfs
-        Object.const_set(:MFS, CI)
+      instantiate_classes_in_parsed_json(JSON.parse(json))
+    end
 
-        old_media_api = (Object.const_get(:MediaAPI) rescue nil)
-        Object.send(:remove_const, :MediaAPI) if old_media_api
-        Object.const_set(:MediaAPI, CI)
+    def instantiate_classes_in_parsed_json(data)
+      case data
+      when Hash
+        ci_class = data.delete('__CLASS__')
+        mapped_data = {}
+        data.each {|key,value| mapped_data[key] = instantiate_classes_in_parsed_json(value)}
 
-        old_json_create_id = JSON.create_id
-        JSON.create_id = '__CLASS__'
-
-        begin
-          JSON.parse(json)
-        ensure
-          Object.send(:remove_const, :MFS)
-          Object.const_set(:MFS, old_mfs) if old_mfs
-          Object.send(:remove_const, :MediaAPI)
-          Object.const_set(:MediaAPI, old_media_api) if old_media_api
-          JSON.create_id = old_json_create_id
+        if ci_class
+          klass = CLASS_MAPPING[ci_class]
+          if klass
+            klass.json_create(mapped_data)
+          else
+            warn("Unknown class in CI json: #{ci_class}")
+            mapped_data
+          end
+        else
+          mapped_data
         end
+
+      when Array
+        data.map {|item| instantiate_classes_in_parsed_json(item)}
+
+      else
+        data
       end
     end
 
@@ -248,13 +284,3 @@ module CI
   end
 
 end
-
-require 'ci/version'
-require 'ci/assets'
-require 'ci/files'
-require 'ci/pager'
-require 'ci/recording'
-require 'ci/release'
-require 'ci/track'
-require 'ci/artist_appearance'
-require 'ci/data'
