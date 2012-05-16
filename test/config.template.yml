@@ -1,5 +1,6 @@
 # This file should include credentials for performing live integration/acceptance tests against a CI API account
 # Copy as test/config.yml (which is .gitignored) and edit.
+:uri: https://api.cissme.com/media/v1
 :username: foo
 :password: bar
 # A UPC which exists in the CI API account above

@@ -16,4 +16,11 @@ TEST_UPC = TEST_CONFIG[:test_upc]
 TEST_AUDIO_FILE = TEST_CONFIG[:test_audio_file]
 TEST_ORGANISATION_ID = TEST_CONFIG[:test_organisation_id]
 
-CI::MediaFileServer.configure(TEST_CONFIG[:username], TEST_CONFIG[:password], TEST_CONFIG)
+if TEST_CONFIG[:log_stdout]
+  require 'logger'
+  logger = Logger.new(STDOUT)
+  logger.level = Logger.const_get((TEST_CONFIG[:log_level] || 'INFO').upcase)
+  TEST_CONFIG[:logger] = logger
+end
+
+CLIENT = CI::Client.new(TEST_CONFIG[:uri], TEST_CONFIG)

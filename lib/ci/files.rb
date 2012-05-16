@@ -79,9 +79,9 @@ module CI
 
     # Preferred way to download bigger files - avoids bringing the whole file into
     # memory at once.
-    def download_to_file(filename, overrides={})
+    def download_to_file(filename)
       ::File.open(filename, 'wb') do |file|
-        MediaFileServer.get_octet_stream(path_components('retrieve'), overrides) do |response|
+        MediaFileServer.get(path_components('retrieve'), :json => false) do |response|
           response.read_body {|segment| file << segment}
         end
       end
@@ -92,8 +92,8 @@ module CI
     end
 
     # Retrieve the data content associated with this file.
-    def retrieve_content(overrides={})
-      MediaFileServer.get_octet_stream(path_components('retrieve'), overrides)
+    def retrieve_content
+      MediaFileServer.get(path_components('retrieve'), :json => false)
     end
 
     # Performs an +MFS::File::Request::Store+ operation on the server, creating a new file.
