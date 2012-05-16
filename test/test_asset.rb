@@ -21,7 +21,7 @@ class TestAsset < Test::Unit::TestCase
 
   def test_reload
     # not desparately thorough re making sure full attributes are present post-reload but makes sure it works in a basic way
-    asset = CI::Metadata::Release.new(:upc => TEST_UPC)
+    asset = CI::Metadata::Release.new(:upc => TEST_UPC, :organisation_id => TEST_ORGANISATION_ID)
     asset_reloaded = asset.reload
     assert(!asset_reloaded.equal?(asset))
     assert_equal asset, asset_reloaded
