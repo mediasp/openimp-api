@@ -1,8 +1,6 @@
 module CI::Repository
   class Release < Base
 
-    def initialize(client)
-
     def model_class ; CI::Metadata::Release ; end
 
     def path_components(instance=nil)

@@ -176,38 +176,9 @@ module CI
     # An +Encoding+ describes the audio codec associated with a server-side audio file.
     class Encoding < Asset
       attributes    :Name, :Codec, :Family, :PreviewLength, :Channels, :Bitrate, :Description
-
-      def self.path_components(instance=nil)
-        if instance
-          ['encoding', instance.name] if instance.name
-        else
-          ['encoding']
-        end
-      end
-
-      def self.list
-        MediaFileServer.get(path_components)
-      end
-
-      @@encodings = nil
-      def self.cache_encodings!
-        @@encodings ||= begin
-          encodings = {}
-          list.each {|e| encodings['/'+e.path_components.join('/')] = e}
-          encodings
-        end
-      end
-
-      # Overridden to fetch from our local cache where available.
-      def self.json_create(parameters)
-        if @@encodings
-          @@encodings[parameters['__REPRESENTATION__']]
-        else
-          super
-        end
-      end
     end
   end
+
 
   # A +ContextualMethod+ is a method call avaiable on a server-side object.
   class ContextualMethod < Asset
