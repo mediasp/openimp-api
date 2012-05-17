@@ -76,8 +76,9 @@ module CI
           # For attributes which expose only a representation we support lazy loading
           result = @parameters[api_key]
           if result.is_a?(Hash) && (url = result["__REPRESENTATION__"])
-            path_components = url.sub(/^\//,'').split('/')
-            @parameters[api_key] = MediaFileServer.get(path_components)
+            raise 'FIXME: no lazy loading'
+#            path_components = url.sub(/^\//,'').split('/')
+#            @parameters[api_key] = MediaFileServer.get(path_components)
           else
             result
           end
@@ -131,19 +132,6 @@ module CI
         result.instance_variable_set(:@path_components, path_components)
         result
       end
-
-      # Call to fetch an asset from the database. You need to specify the attributes necessary to identify the object, as required by your
-      # overriden version of CI::Asset.path_components to generate a URL path for the object.
-      def find(parameters)
-        stub = new(parameters)
-        path = stub.path_components
-        raise "Insufficient attributes were passed to CI::Asset.find to generate a URL" unless path
-        MediaFileServer.get(path)
-      end
-
-      def find_or_new(parameters)
-        find(parameters) || new(parameters)
-      end
     end
 
     # this can be used to create a new instance of an asset from a user-supplied attribute hash.
@@ -152,24 +140,7 @@ module CI
       parameters.each {|k,v| send(:"#{k}=", v)}
     end
 
-    def uri(override_base_uri=nil)
-      MediaFileServer.uri_for(path_components, override_base_uri)
-    end
-
-    # this returns an array of strings consisting of the path components for the canonical URL for this asset/resource.
-    # as a convenience, you can pass additional path components as arguments and it'll tack them on the end.
-    # note that objects are compared for identity by comparing these; also note that sometimes, the value of this method is obtained from the
-    # original __REPRESENTATION__ we were passed for the object, whereas other times (eg in the case of a new object) it's generated from the
-    # object's attributes.
-    def path_components(*args)
-      components = if defined?(@path_components)
-        @path_components
-      else
-        @path_components = self.class.path_components(self) and @path_components.map! {|c| c.to_s} # we normalise this to a string representation for comparison purposes
-      end
-      components && components + args
-    end
-
+    # FIXME move to repository
     def to_json(*a)
       result = {'__CLASS__' => self.class.name.sub(/CI::/i, 'MFS::')}
       parameters.each do |k,v|
@@ -188,41 +159,6 @@ module CI
       end
       result.to_json(*a)
     end
-
-    # in all these methods, MediaFileServer takes a list of path components, and handles generating the URL from these itself.
-    # (this is because of the possible presence of extra path components which depend on the API endpoint URL - eg /v1/ )
-
-    [:get, :head, :delete].each do |m|
-      class_eval <<-METHOD
-        def #{m} action = nil
-          MediaFileServer.#{m}(path_components(action))
-        end
-      METHOD
-    end
-
-    def post(properties, action = nil, headers = {})
-      MediaFileServer.post(path_components(action), properties, headers)
-    end
-
-    def multipart_post
-      MediaFileServer.multipart_post(path_components || self.class.path_components) {|url| yield url}
-    end
-
-    def put(content_type, data)
-      MediaFileServer.put(path_components, content_type, data)
-    end
-
-    # returns a reloaded version of self, fetched from the URL given by its path_components
-    def reload
-      pc = path_components() or raise "Insufficient attributes were defined to generate a URL in order to reload"
-      MediaFileServer.get(pc)
-    end
-
-    # state-modifying version of reload
-    def reload!
-      replace_with!(reload)
-    end
-
   protected
     def replace_with! asset
       @parameters = asset.parameters
