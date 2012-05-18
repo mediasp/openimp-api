@@ -23,25 +23,6 @@ module CI
 
       collections :tracks, :Artists, :FeaturedArtists, :Genres, :SubGenres, :offers
 
-      def self.path_components(instance=nil)
-        if instance
-          if instance.upc
-            cmps = ['release', 'upc', instance.upc]
-
-            # If supplied, we can narrow the search by organisation to
-            # avoid UPC clashes - API behaviour for clashes is as yet
-            # undefined, and we can expect other changes
-            if instance.organisation_id
-              ['licensor', instance.organisation_id] + cmps
-            else
-              cmps
-            end
-          end
-        else
-          ['release']
-        end
-      end
-
       # "GRiD" doesn't auto-camel-case very nicely
       def grid; @parameters['GRiD']; end
       def grid=(grid); @parameters['GRiD'] = grid; end
@@ -63,8 +44,5 @@ module CI
         end
       end
     end
-
-    # The API exposes two methpds for Releases.
-    # FindByUPC is nothing more than a load using the UPC code as the ID attribute
   end
 end

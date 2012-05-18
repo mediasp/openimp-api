@@ -15,9 +15,11 @@ require 'thread' # for Thread.exclusive
 
 module CI
 
-  # This is useful to expose for (eg) integration tests that want to load fixtures from json without hitting the API
+  # This is useful to expose for (eg) integration tests that want to load
+  # fixtures from json without hitting the API
   def self.parse_json(json)
-    MediaFileServer.instance.send(:parse_json, json)
+    deserializer = Object.new.extend(CI::Deserializer)
+    deserializer.parse_json(json)
   end
 
 end
@@ -31,5 +33,6 @@ require 'ci/release'
 require 'ci/track'
 require 'ci/artist_appearance'
 require 'ci/data'
+require 'ci/deserializer'
 require 'ci/client'
 require 'ci/repository'

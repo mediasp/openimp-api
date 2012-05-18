@@ -26,6 +26,11 @@ module CI::Repository
       "/" + (path_components(instance) + args).join("/")
     end
 
+    # default listing implementation
+    def list
+      @client.get(path_for(), 'list')
+    end
+
     # Call to fetch an asset from the database. You need to specify the
     # attributes necessary to identify the object, as required by your
     # overriden version of repository.path_components to generate a URL path for

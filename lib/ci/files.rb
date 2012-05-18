@@ -7,27 +7,6 @@ module CI
     attributes :Id, :URL, :PlayURL, :RedirectWhenExpiredUrl, :SuccessfulDownloads, :AttemptedDownloads, :MaxDownloadAttempts, :MaxDownloadSuccesses
     attributes :file
 
-    def self.path_components(instance=nil)
-      if instance
-        ['filetoken', instance.id] if instance.id
-      else
-        ['filetoken']
-      end
-    end
-
-
-    # The MFS API exposes a FileToken creation via several different URLs. However we will never want to create
-    # a file token that we do not already have a file to hand, and hence we only use the FileStore URL.
-    def self.create(file, properties = {})
-      MediaFileServer.post(file.path_components('createfiletoken'), properties)
-    end
-
-    # As an alternative a FileToken object can be created and the appropriate values set, then the save method
-    # called which creates the token on the server and its details loaded.
-    def save
-      FileToken.create file, :RedirectWhenExpiredUrl => redirect_when_expired_url, :Unlimited => unlimited, :MaxDownloadAttempts => max_download_attempts, :MaxDownloadSuccesses => max_download_successes
-    end
-
     [:Unlimited, :Valid].each do |m|
       class_eval <<-METHODS
         def #{make_ci_method_name(m)}
@@ -100,17 +79,6 @@ module CI
 
   class File::Image < File
     attributes    :width, :height
-
-    RESIZE_METHODS = [ 'NOMODIFIER', 'EXACT', 'SQUARE', 'SMALLER', 'LARGER' ]
-    RESIZE_TYPES = { 'jpeg' => 'jpg', 'png' => 'png', 'tiff' => 'tiff', 'gif' => 'gif', 'bmp' => 'bmp' }
-
-    def resize(width, height, mode = :NOMODIFIER, properties = {})
-      MediaFileServer.post(path_components('contextualmethod', 'Resize'), properties.merge(:targetX => width, :targetY => height, :resizeType => "IMAGE_RESIZE_#{mode}", :Synchronous => 1))
-    end
-
-    def resize! width, height, mode = :NOMODIFIER, properties = {}
-      replace_with! resize(width, height, mode, properties)
-    end
   end
 
   class File::Video < File

@@ -2,6 +2,13 @@ module CI::Repository
 
   class File < Base
 
+    attr_reader :file_token_repository
+
+    def initialize(client)
+      super
+      @file_token_repository = Token.new(@client, self)
+    end
+
     def model_class ; CI::File ; end
 
     def path_components(instance=nil)

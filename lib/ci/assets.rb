@@ -30,16 +30,6 @@ module CI
       end
     end
 
-    # should return a list of path components for (if no instance given) the base URL for the object type, otherwise the base URL for the instance given.
-    # You need to override this to specify the URL format for any asset subclass.
-    def self.path_components(instance=nil)
-      raise NotImplemented, "You need to override CI::Asset.path_components"
-    end
-
-    def self.list
-      MediaFileServer.get(path_components + ['list'])
-    end
-
     def self.make_ci_method_name(string)
       string.to_s.
         gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
