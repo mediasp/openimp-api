@@ -23,7 +23,7 @@ module CI
 
   class File < Asset
     attributes    :Id, :MimeMajor, :MimeMinor, :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize, :crc32
-    attr_reader   :content
+    attr_accessor :content
     attr_reader   :file_name
 
     def mime_type

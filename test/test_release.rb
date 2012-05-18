@@ -1,8 +1,13 @@
 require 'test/common'
 
 class TestRelease < Test::Unit::TestCase
+
+  def setup
+    @release_repo = CI::Repository::Release.new(CLIENT)
+  end
+
   def test_get_release
-    release = CI::Metadata::Release.find(:upc => TEST_UPC)
+    release = @release_repo.find(:upc => TEST_UPC)
     assert_instance_of CI::Metadata::Release, release
     assert_instance_of Date, release.release_date
 
@@ -30,14 +35,14 @@ class TestRelease < Test::Unit::TestCase
   end
 
   def test_lookup_by_organisation
-    release = CI::Metadata::Release.find(:upc => TEST_UPC,
+    release = @release_repo.find(:upc => TEST_UPC,
       :organisation_id => TEST_ORGANISATION_ID)
 
     assert_instance_of CI::Metadata::Release, release
   end
 
   def test_get_front_cover_for_release
-    release = CI::Metadata::Release.find(:upc => TEST_UPC)
+    release = @release_repo.find(:upc => TEST_UPC)
     assert_instance_of CI::Metadata::Release, release
     assert_instance_of String, release.main_artist
     front_cover = release.imagefrontcover
@@ -45,7 +50,7 @@ class TestRelease < Test::Unit::TestCase
   end
 
   def xtest_release_list
-    list = CI::Metadata::Release.list
+    list = @release_repo.list
     assert_instance_of CI::Pager, list
     list.each do |page|
       assert_instance_of Array, page

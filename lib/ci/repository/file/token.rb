@@ -22,7 +22,9 @@ module CI::Repository
     # have a file to hand, and hence we only use the FileStore URL.
     def create(file, properties = {})
       path = @file_repository.path_for(file, 'createfiletoken')
-      @client.post(path, properties)
+      @client.post(path, properties).tap do |token|
+        token.file = file
+      end
     end
 
     # As an alternative a FileToken object can be created and the appropriate

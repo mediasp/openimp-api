@@ -3,6 +3,8 @@ module CI::Repository
   class File < Base
 
     attr_reader :file_token_repository
+    alias :token_repository :file_token_repository
+
 
     def initialize(client)
       super
@@ -25,7 +27,7 @@ module CI::Repository
 
     # Performs an +MFS::File::Request::Store+ operation on the server, creating a new file.
     def store(file)
-      @client.multipart_post do
+      @client.multipart_post(path_for()) do
         [
           "Content-Disposition: form-data; name=\"file\"; filename=\"#{file.file_name.basename rescue "null"}\"\r\nContent-Type: #{file.mime_type}\r\n\r\n#{file.content}",
           "Content-Disposition: form-data; name=\"MimeMajor\"\r\n\r\n#{file.mime_major}",
@@ -35,14 +37,23 @@ module CI::Repository
       end
     end
 
+    def store!(file)
+      new_file = store(file)
+      file.send(:replace_with!, new_file)
+    end
+
     def disk_file(name, mime_type)
-      new(:mime_type => mime_type, :content => ::File.read(name), :file_name => name)
+      model_class.new(:mime_type => mime_type, :content => ::File.read(name),
+        :file_name => name)
+    end
+
+    def delete(file)
+      @client.delete(path_for(file))
     end
 
     # Preferred way to download bigger files - avoids bringing the whole file into
     # memory at once.
     def download_to_file(ci_file, filename)
-      raise NotImplementedError
       # needs response yielding to be added to the client first
       ::File.open(filename, 'wb') do |file|
         retrieve(ci_file) do |response|
@@ -58,9 +69,15 @@ module CI::Repository
       end
     end
 
+    def retrieve_content(file)
+      file.content = retrieve(file).body
+    end
+
     # returns the raw binary data for a CI::File as a string
     def retrieve(file, &block)
-      @client.get(path_for(file) + '/retrieve', :json => false, &block)
+      response = @client.get(path_for(file) + '/retrieve', :json => false, &block)
+      yield(response) if block_given?
+      response
     end
 
     # a list of the contextual methods for a CI::File

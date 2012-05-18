@@ -40,6 +40,7 @@ module CI
         end
         Net::HTTP::Get.new(path)
       end
+
     end
 
     def head(path, options={})
@@ -56,10 +57,10 @@ module CI
 
     MIME_DELIMITER_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ()+_-./:=?'" # "," RFC valid character but not supported by MFS parser
 
-    def multipart_post(path, options)
+    def multipart_post(path, options={})
       make_http_request(path, options) do |path|
         request = Net::HTTP::Post.new(path)
-        bodies = [yield(url)]
+        bodies = [yield(path)]
         delimiter = create_mime_delimiter
         request['Content-Type'] = "multipart/form-data; boundary=\"#{delimiter}\""
         separator = "\r\n--#{delimiter}\r\n"
@@ -106,11 +107,11 @@ module CI
         connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
       connection.start do
-        full_path = case path
-        when String then @base_uri.path + path
-        when Array  then [@base_uri.path, *path].join('/')
+        path_as_string = case path
+        when String then '/' + path
+        when Array  then '/' + path.join('/')
         end
-        request = yield(path)
+        request = yield(@base_uri.path + path_as_string)
         request.basic_auth(@username, @password)
         options[:headers].each {|k,v| request[k] = v} if options[:headers]
         request['Accept'] = 'application/json' if options.fetch(:json, true)
@@ -127,8 +128,13 @@ module CI
           raise HTTPError, "#{response.code}: #{response.body}"
         else
           log_http_response(start_time, request, response)
-          if response.body && options.fetch(:json, true)
-            parse_json(response.body)
+          if options.fetch(:json, true) && response.body
+            parse_json(response.body).tap do |result|
+              # not sure whether this should include the base_uri path
+              # mung the uri on to the deserialized object - used for equality
+              # and sort of replaces the old path_components property
+              result.respond_to?(:uri=) && result.uri = path_as_string
+            end
           else
             response
           end
@@ -163,8 +169,6 @@ module CI
       log level,   "Finished request: #{request.method} #{request.path} #{response.code} #{took_secs}"
 
       return unless log_debug?
-
-      log :debug,  "  #{response.body}"
     end
 
     def log(level, msg)

@@ -43,6 +43,18 @@ module CI
         else nil # we don't know
         end
       end
+
+      def ==(rhs)
+        # if there is no uri, we can compare on upc
+        self.uri.nil?? (rhs.is_a?(self.class) && self.upc && self.upc == rhs.upc &&
+          self.organisation_id == rhs.organisation_id) : super
+      end
+      alias :eql? :==
+
+      def hash
+        self.uri.nil?? [self.upc, self.organisation_id].compact.hash : super
+      end
+
     end
   end
 end

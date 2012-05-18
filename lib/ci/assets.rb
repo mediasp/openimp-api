@@ -15,6 +15,9 @@ module CI
   # The +Asset+ class defines the core features of server-side objects, including the ability to autoinstantiate them
   # from _JSON_ for transport across the network.
   class Asset
+
+    attr_accessor :uri
+
     # Simple implementation of a +class inheritable accessor+.
     def self.class_inheritable_accessor(*args)
       args.each do |arg|
@@ -46,9 +49,9 @@ module CI
 
     # equality based on the path_components (the URL is necessarily a unique identifier for a resource within the API)
     def ==(other)
-      super or (other.instance_of?(self.class) && path_components && path_components == other.path_components)
+      super or (other.instance_of?(self.class) && uri && uri == other.uri)
     end
-    def hash; path_components.hash; end
+    def hash; uri.hash; end
     alias :eql? :==
 
     def self.attribute_types
@@ -150,9 +153,9 @@ module CI
       result.to_json(*a)
     end
   protected
-    def replace_with! asset
+    def replace_with!(asset)
       @parameters = asset.parameters
-      @path_components = asset.path_components
+      @uri = asset.uri
       self
     end
 

@@ -23,7 +23,7 @@ module CI::Repository
     end
 
     def path_for(instance=nil, *args)
-      "/" + (path_components(instance) + args).join("/")
+      (path_components(instance) + (args || [])).join("/")
     end
 
     # default listing implementation

@@ -1,8 +1,14 @@
 require 'test/common'
 
 class TestAsset < Test::Unit::TestCase
+
+  def setup
+    @encoding_repo = CI::Repository::Encoding.new(CLIENT)
+    @release_repo = CI::Repository::Release.new(CLIENT)
+  end
+
   def test_list_encodings
-    list = CI::Metadata::Encoding.list
+    list = @encoding_repo.list
     assert !list.empty?
     assert_instance_of CI::Metadata::Encoding, list.first
   end
@@ -22,7 +28,7 @@ class TestAsset < Test::Unit::TestCase
   def test_reload
     # not desparately thorough re making sure full attributes are present post-reload but makes sure it works in a basic way
     asset = CI::Metadata::Release.new(:upc => TEST_UPC, :organisation_id => TEST_ORGANISATION_ID)
-    asset_reloaded = asset.reload
+    asset_reloaded = @release_repo.reload(asset)
     assert(!asset_reloaded.equal?(asset))
     assert_equal asset, asset_reloaded
     assert(asset.reload!.equal?(asset))
