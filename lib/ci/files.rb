@@ -44,20 +44,8 @@ module CI
 
   class File < Asset
     attributes    :Id, :MimeMajor, :MimeMinor, :SHA1DigestBase64, :UploaderIP, :Stored, :FileSize, :crc32
-    attr_writer   :content
+    attr_reader   :content
     attr_reader   :file_name
-
-    def self.path_components(instance=nil)
-      if instance
-        ['filestore', instance.id] if instance.id
-      else
-        ['filestore']
-      end
-    end
-
-    def self.disk_file(name, mime_type)
-      new(:mime_type => mime_type, :content => ::File.read(name), :file_name => name)
-    end
 
     def mime_type
       "#{mime_major}/#{mime_minor}"
@@ -73,59 +61,14 @@ module CI
       self.mime_major, self.mime_minor = *mime_type.split("/")
     end
 
-    def content
-      @content ||= retrieve_content
-    end
-
-    # Preferred way to download bigger files - avoids bringing the whole file into
-    # memory at once.
-    def download_to_file(filename)
-      ::File.open(filename, 'wb') do |file|
-        MediaFileServer.get(path_components('retrieve'), :json => false) do |response|
-          response.read_body {|segment| file << segment}
-        end
-      end
-    end
-
     def file_name=(name)
       @file_name = (Pathname.new(name.to_s) rescue name)
     end
 
-    # Retrieve the data content associated with this file.
-    def retrieve_content
-      MediaFileServer.get(path_components('retrieve'), :json => false)
-    end
-
-    # Performs an +MFS::File::Request::Store+ operation on the server, creating a new file.
-    def store
-      multipart_post do
-        [ "Content-Disposition: form-data; name=\"file\"; filename=\"#{file_name.basename rescue "null"}\"\r\nContent-Type: #{mime_type}\r\n\r\n#{content}",
-          "Content-Disposition: form-data; name=\"MimeMajor\"\r\n\r\n#{mime_major}",
-          "Content-Disposition: form-data; name=\"MimeMinor\"\r\n\r\n#{mime_minor}",
-          "Content-Disposition: form-data; name=\"FileClass\"\r\n\r\n#{self.class.mfs_class_name}"
-          ]
-      end
-    end
-
-    def self.mfs_class_name
-      name.sub(/^CI/, 'MFS')
-    end
-
-    def store!
-      replace_with! store
-    end
-
-    def create_file_token(unlimited = false, attempts = 2, successes = 2)
-      FileToken.create self, :Unlimited => unlimited, :MaxDownloadAttempts => attempts, :MaxDownloadSuccesses => successes
-    end
-
-    def change_meta_data
-      replace_with! post(:MimeMajor => mime_major, :MimeMinor => mime_minor)
-    end
-
-    def contextual_methods
-      @contextual_methods ||= get('contextualmethod')
-    end
+    # not being ported
+    # def create_file_token(unlimited = false, attempts = 2, successes = 2)
+    #   FileToken.create self, :Unlimited => unlimited, :MaxDownloadAttempts => attempts, :MaxDownloadSuccesses => successes
+    # end
 
     # Disable this method as it has proven to cause latency issues. CI promised to
     # fix it by adding a DB index, but avoid for now. CI::Files should now be created

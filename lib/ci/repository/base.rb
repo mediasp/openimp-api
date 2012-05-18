@@ -22,8 +22,8 @@ module CI::Repository
       raise NotImplementedError
     end
 
-    def path_for(*args)
-      "/" + path_components(*args).join("/")
+    def path_for(instance=nil, *args)
+      "/" + (path_components(instance) + args).join("/")
     end
 
     # Call to fetch an asset from the database. You need to specify the

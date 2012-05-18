@@ -8,7 +8,7 @@ module CI
 
       @username   = options[:username]
       @password   = options[:password]
-      
+
       @logger     = options[:logger]
       @open_timeout = options[:open_timeout]
       @read_timeout = options[:read_timeout]
@@ -18,10 +18,10 @@ module CI
     # and the ruby URI::HTTP doesn't handle escaping and unescaping these
     # properly. So we store the (unescaped) credentials separately; if you
     # want a URL with them incorporated you can call this which will make
-    # sure they get escaped properly.    
+    # sure they get escaped properly.
     def uri_with_credentials(extra_path=nil)
       uri = @base_uri.dup
-      
+
       # URI::REGEXP::UNSAFE but disallowing @ and :
       uri.user     = URI.escape(@username, /[^-_.!~*'()a-zA-Z\d;\/?&=+$,\[\]]/n)
       uri.password = URI.escape(@password, /[^-_.!~*'()a-zA-Z\d;\/?&=+$,\[\]]/n)
@@ -29,12 +29,13 @@ module CI
       uri
     end
 
+    # FIXME get it to support reading the response directly
     def get(path, options={})
       make_http_request(path, options) do |path|
         query = options[:query] and begin
           path << '?'
           path << query.map {|k,v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}"}.join("&")
-        end        
+        end
         Net::HTTP::Get.new(path)
       end
     end
@@ -66,7 +67,7 @@ module CI
       end
     end
 
-    def put(path, content_type, payload)      
+    def put(path, content_type, payload)
       make_http_request(path, options, payload) do |path, p, data|
         request = Net::HTTP::Put.new(path)
         request['Content-Length'] = payload.length.to_s
@@ -91,10 +92,10 @@ module CI
 
   private
     class HTTPError < StandardError; end
-  
+
     def make_http_request(path, options={}, &block)
       start_time = Time.now
-      
+
       connection = Net::HTTP.new(@base_uri.host, @base_uri.port)
       connection.open_timeout = @open_timeout if @open_timeout
       connection.read_timeout = @read_timeout if @read_timeout
@@ -114,7 +115,7 @@ module CI
         log_http_request(request)
 
         response = connection.request(request)
-        
+
         case response
         when nil
           log :warn, "No response received"
@@ -129,10 +130,10 @@ module CI
           else
             response
           end
-        end        
+        end
       end
     end
-    
+
     def create_mime_delimiter(length = 30)
       srand; result = ''; raise 'too long' if length > 70
       random_range = MIME_DELIMITER_CHARS.length
