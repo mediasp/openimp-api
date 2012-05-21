@@ -8,6 +8,10 @@ module CI::Repository
 
     def model_class ; CI::File::Image ; end
 
+    def mfs_class_name
+      "MFS::File::Image"
+    end
+
     def resize(file, width, height, mode = :NOMODIFIER, properties = {})
       @client.post(path_for(file, 'contextualmethod', 'Resize'),
         properties.merge(:targetX => width, :targetY => height, :resizeType => "IMAGE_RESIZE_#{mode}", :Synchronous => 1))

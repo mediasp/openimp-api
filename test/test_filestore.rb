@@ -113,14 +113,14 @@ class TestFilestore < Test::Unit::TestCase
     assert_instance_of CI::File::Image, file
     assert_instance_of Fixnum, file.width
 
-    contextual_methods = file.contextual_methods
+    contextual_methods = @image_repo.contextual_methods(file)
     assert_instance_of Array, contextual_methods
     contextual_methods.each do |method|
       assert_instance_of CI::ContextualMethod, method
     end
     digest = file.sha1_digest_base64
     height, width = file.height, file.width
-    file.resize! 200, 300, :EXACT, { :targetType => 'jpg' }
+    @image_repo.resize!(file, 200, 300, :EXACT, { :targetType => 'jpg' })
     assert_equal 200, file.width.to_i
     assert_equal 300, file.height.to_i
     assert_not_equal digest, file.sha1_digest_base64
