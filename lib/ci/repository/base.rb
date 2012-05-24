@@ -48,7 +48,7 @@ module CI::Repository
     end
 
     def reload(instance)
-      @client.get(path_for(instance))
+      @client.get(instance.uri || path_for(instance))
     end
 
   end
