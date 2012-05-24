@@ -28,7 +28,7 @@ module CI::Repository
       @cache_lock.synchronize do
         @encodings ||= begin
           encodings = {}
-          list.each {|e| encodings['/'+e.path_components.join('/')] = e}
+          list.each {|e| encodings['/' + path_for(e) ] = e}
           encodings
         end
       end
