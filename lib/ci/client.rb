@@ -1,6 +1,11 @@
 module CI
   class Client
+
     attr_reader :base_uri
+    attr_reader :username
+    attr_reader :password
+    attr_reader :open_timeout
+    attr_reader :read_timeout
 
     include Deserializer
 
@@ -8,12 +13,12 @@ module CI
       @base_uri = uri
       @base_uri = URI.parse(uri) unless uri.is_a?(URI)
 
-      @username   = options[:username]
-      @password   = options[:password]
+      @username   = options.fetch(:username)
+      @password   = options.fetch(:password)
 
       @logger     = options[:logger]
-      @open_timeout = options[:open_timeout]
-      @read_timeout = options[:read_timeout]
+      @open_timeout = options[:open_timeout] || 60
+      @read_timeout = options[:read_timeout] || 60
     end
 
     # Have to be careful here, as CI use usernames with an @ sign in them,
@@ -25,13 +30,16 @@ module CI
       uri = @base_uri.dup
 
       # URI::REGEXP::UNSAFE but disallowing @ and :
-      uri.user     = URI.escape(@username, /[^-_.!~*'()a-zA-Z\d;\/?&=+$,\[\]]/n)
-      uri.password = URI.escape(@password, /[^-_.!~*'()a-zA-Z\d;\/?&=+$,\[\]]/n)
+      uri.user     = escape_uri_part(@username)
+      uri.password = escape_uri_part(@password)
       uri.path += extra_path if extra_path
       uri
     end
 
-    # FIXME get it to support reading the response directly
+    def escape_uri_part(part)
+      URI.escape(part, /[^-_.!~*'()a-zA-Z\d;\/?&=+$,\[\]]/n)
+    end
+
     def get(path, options={})
       make_http_request(path, options) do |path|
         query = options[:query] and begin
