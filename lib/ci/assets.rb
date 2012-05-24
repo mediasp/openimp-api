@@ -67,11 +67,13 @@ module CI
         attribute_types[api_key] = type
         define_method(ruby_method) do
           # For attributes which expose only a representation we support lazy loading
+          # Now that we are no longer a singleton, we rely on the transport to inject
+          # this instance variable for generic loading
           result = @parameters[api_key]
           if result.is_a?(Hash) && (url = result["__REPRESENTATION__"])
-            raise 'FIXME: no lazy loading'
-#            path_components = url.sub(/^\//,'').split('/')
-#            @parameters[api_key] = MediaFileServer.get(path_components)
+            raise 'no client, can not lazy load' if @__deserializing_client.nil?
+
+            @__deserializing_client.get(url.sub(/^\//,'').split('/'))
           else
             result
           end

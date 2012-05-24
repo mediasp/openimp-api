@@ -26,21 +26,25 @@ module CI::Deserializer
     'MediaAPI::Data::Offer::Terms'    => CI::Data::Offer::Terms
   }
 
-  def parse_json(json)
-    instantiate_classes_in_parsed_json(JSON.parse(json))
+
+  # block - visitor to each mapped class that is instantiated
+  def parse_json(json, &block)
+    instantiate_classes_in_parsed_json(JSON.parse(json), &block)
   end
 
-  def instantiate_classes_in_parsed_json(data)
+  def instantiate_classes_in_parsed_json(data, &block)
     case data
     when Hash
       ci_class = data.delete('__CLASS__')
       mapped_data = {}
-      data.each {|key,value| mapped_data[key] = instantiate_classes_in_parsed_json(value)}
+      data.each {|key,value| mapped_data[key] = instantiate_classes_in_parsed_json(value, &block)}
 
       if ci_class
           klass = CLASS_MAPPING[ci_class]
         if klass
-          klass.json_create(mapped_data)
+          klass.json_create(mapped_data).tap do |instance|
+            yield instance if block_given?
+          end
         else
           warn("Unknown class in CI json: #{ci_class}")
           mapped_data
@@ -50,7 +54,7 @@ module CI::Deserializer
       end
 
     when Array
-      data.map {|item| instantiate_classes_in_parsed_json(item)}
+      data.map {|item| instantiate_classes_in_parsed_json(item, &block)}
 
     else
       data

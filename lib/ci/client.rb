@@ -1,4 +1,8 @@
 module CI
+
+  # TODO would be nice to make clients aware of repositories and classes
+  # in a nice way, so that we don't have the class mapping business and can do
+  # smarter stuff with models like not awful lazy loading
   class Client
 
     attr_reader :base_uri
@@ -137,7 +141,16 @@ module CI
         else
           log_http_response(start_time, request, response)
           if options.fetch(:json, true) && response.body
-            parse_json(response.body).tap do |result|
+
+            # we inject a nasty instance variable to the client so that it
+            # can lazy load any references to other objects - could be done
+            # with thin_models, as this has built in support
+            # for lazy loading attributes
+            deserialized_object = parse_json(response.body) do |instance|
+              instance.instance_variable_set("@__deserializing_client", self)
+            end
+
+            deserialized_object.tap do |result|
               # not sure whether this should include the base_uri path
               # mung the uri on to the deserialized object - used for equality
               # and sort of replaces the old path_components property
