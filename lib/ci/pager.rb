@@ -30,7 +30,7 @@ module CI
     def [] n
       path = @pages[n]
       path_components = path.sub!(/^\//,'').split('/')
-      MediaFileServer.get(path_components)
+      @__deserializing_client.get(path_components)
     end
     alias :page :[]
 
