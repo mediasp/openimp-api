@@ -44,12 +44,15 @@ module CI
     # in the pager page listing) before yielding them to you.
     # Has a length corresponding to the NumberOfEntries from the pager.
     def items
-      Items.new(self)
+      # hmm, don't like this - need to formalize this __deserializing_client
+      # hack
+      Items.new(self, @__deserializing_client)
     end
 
     class Items
-      def initialize(pager)
-        @pager = pager
+      def initialize(pager, client)
+        @pager  = pager
+        @client = client
       end
 
       include Enumerable
@@ -57,7 +60,9 @@ module CI
       def each
         @pager.each do |page|
           page.each do |item|
-            yield item.reload!
+            # not sure where path_components comes from, but in the case of
+            # paged stuff it seems to be there.
+            yield @client.get(item.instance_variable_get("@path_components"))
           end
         end
       end
@@ -65,7 +70,9 @@ module CI
       def reverse_each
         @pager.reverse_each do |page|
           page.reverse_each do |item|
-            yield item.reload!
+            # not sure where path_components comes from, but in the case of
+            # paged stuff it seems to be there.
+            yield @client.get(item.instance_variable_get("@path_components"))
           end
         end
       end

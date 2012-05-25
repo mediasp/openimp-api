@@ -154,6 +154,8 @@ module CI
               # not sure whether this should include the base_uri path
               # mung the uri on to the deserialized object - used for equality
               # and sort of replaces the old path_components property
+              # also, some objects are coming back with a path_components
+              # instance variable - where does that come from?
               result.respond_to?(:uri=) && result.uri = path_as_string
             end
           else
