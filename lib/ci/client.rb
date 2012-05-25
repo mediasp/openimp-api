@@ -44,8 +44,8 @@ module CI
       URI.escape(part, /[^-_.!~*'()a-zA-Z\d;\/?&=+$,\[\]]/n)
     end
 
-    def get(path, options={})
-      make_http_request(path, options) do |path|
+    def get(path, options={}, &block)
+      make_http_request(path, options, block) do |path|
         query = options[:query] and begin
           path << '?'
           path << query.map {|k,v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}"}.join("&")
@@ -108,7 +108,11 @@ module CI
   private
     class HTTPError < StandardError; end
 
-    def make_http_request(path, options={}, &block)
+    # options:
+    #   :json => if false, assume the caller is handling processing the response
+    #   via `response_proc`,  otherwise parse the json and return a deserialized
+    #   object
+    def make_http_request(path, options={}, response_proc=nil, &block)
       start_time = Time.now
 
       connection = Net::HTTP.new(@base_uri.host, @base_uri.port)
@@ -129,7 +133,12 @@ module CI
         request['Accept'] = 'application/json' if options.fetch(:json, true)
         log_http_request(request)
 
-        response = connection.request(request)
+        response =
+          if response_proc
+            connection.request(request, &response_proc)
+          else
+            connection.request(request)
+          end
 
         case response
         when nil
@@ -158,8 +167,6 @@ module CI
               # instance variable - where does that come from?
               result.respond_to?(:uri=) && result.uri = path_as_string
             end
-          else
-            response
           end
         end
       end

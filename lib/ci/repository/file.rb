@@ -70,14 +70,12 @@ module CI::Repository
     end
 
     def retrieve_content(file)
-      file.content = retrieve(file).body
+      retrieve(file) { |r| file.content = r.body }
     end
 
     # returns the raw binary data for a CI::File as a string
     def retrieve(file, &block)
-      response = @client.get(path_for(file) + '/retrieve', :json => false, &block)
-      yield(response) if block_given?
-      response
+      @client.get(path_for(file) + '/retrieve', :json => false, &block)
     end
 
     # a list of the contextual methods for a CI::File
