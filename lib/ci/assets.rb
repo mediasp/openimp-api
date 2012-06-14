@@ -113,9 +113,10 @@ module CI
             # we expose this as an integer number of seconds
             # note: throw away any further precision (e.g. microseconds as seen on audio files)
             v =~ /^PT(\d\d)H(\d\d)M(\d\d)(\.\d+)?S$/i and $1.to_i*3600 + $2.to_i*60 + $3.to_i
+
           when :release_array
             (v || []).map do |h|
-              Metadata::Release.new(:upc => h["__REPRESENTATION__"][/(\d+)$/])
+              Metadata::Release.new(:uri => h["__REPRESENTATION__"], :upc => h["__REPRESENTATION__"][/(\d+)$/])
             end
           else
             v
