@@ -127,7 +127,9 @@ module CI
         when String then '/' + path
         when Array  then '/' + path.join('/')
         end
-        request = yield(@base_uri.path + path_as_string)
+        # remove any trailing string on the base_uri path
+        complete_path = @base_uri.path.gsub(/\/+$/, '') + path_as_string
+        request = yield(complete_path)
         request.basic_auth(@username, @password)
         options[:headers].each {|k,v| request[k] = v} if options[:headers]
         request['Accept'] = 'application/json' if options.fetch(:json, true)
