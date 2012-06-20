@@ -1,4 +1,4 @@
-source "http://playlouder:dirtypillows@gems.playlouder.com"
+source :rubygems
 
 gemspec
 
