@@ -120,7 +120,11 @@ module CI
             v =~ /^PT(\d\d)H(\d\d)M(\d\d)(\.\d+)?S$/i and $1.to_i*3600 + $2.to_i*60 + $3.to_i
           when :release_array
             (v || []).map do |h|
-              Metadata::Release.new(:upc => h["__REPRESENTATION__"][/(\d+)$/])
+              r_representation = h["__REPRESENTATION__"]
+              Metadata::Release.new(:upc => r_representation[/(\d+)$/]).tap do |r|
+                r_path_components = r_representation.sub(/^\//,'').split('/')
+                r.instance_variable_set('@path_components', r_path_components)
+              end
             end
           else
             v
