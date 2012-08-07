@@ -1,6 +1,6 @@
 # OpenIMP API Client
 
-Client for communicating with OpenIMP APIs, such as that used by Consilidated Independent.
+Client for communicating with OpenIMP APIs, such as that used by Consolidated Independent.
 
 ## Hello, World
 
