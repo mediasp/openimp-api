@@ -146,6 +146,7 @@ module CI
           result = new
           result.instance_variable_set(:@parameters, ruby_params)
           result.instance_variable_set(:@path_components, path_components)
+          result.uri = representation
           result
         end
       end
