@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'rake'
 require 'rake/testtask'
-require 'rake/rdoctask'
+require 'rdoc/task'
 
 lib = File.expand_path('../lib/', __FILE__)
 $:.unshift lib unless $:.include?(lib)
@@ -11,7 +11,7 @@ Rake::TestTask.new do |t|
   t.verbose = true
 end
 
-Rake::RDocTask.new do |t|
+RDoc::Task.new do |t|
   t.rdoc_dir = 'rdoc'
 end
 

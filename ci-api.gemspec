@@ -16,6 +16,8 @@ spec = Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.add_development_dependency('rake')
   s.add_dependency('json', '~> 1.5.5')
+  s.add_development_dependency('rdoc')
+  s.add_development_dependency('rdoc-data')
   s.test_files = Dir.glob("test/**/test_*.rb")
   s.has_rdoc = false
 end
