@@ -1,4 +1,4 @@
-require 'test/common'
+require_relative 'common'
 
 class TestRelease < Test::Unit::TestCase
 

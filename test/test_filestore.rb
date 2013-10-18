@@ -1,4 +1,4 @@
-require 'test/common'
+require_relative 'common'
 require 'open-uri'
 require 'tempfile'
 
