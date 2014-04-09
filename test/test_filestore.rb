@@ -1,4 +1,9 @@
-require_relative 'common'
+if RUBY_VERSION <= '1.8.7'
+  require 'test/common'
+else
+  require_relative 'common'
+end
+
 require 'open-uri'
 require 'tempfile'
 
